@@ -248,7 +248,6 @@ class NeuronCalendar {
         form.onsubmit = (e) => {
             e.preventDefault();
             this.saveEvent();
-            return false; // Предотвращаем повторную отправку
         };
     }
 
@@ -715,28 +714,38 @@ class NeuronCalendar {
             }
         });
     }
+
+    // Методы для работы с модальными окнами
+    showAddEventModal() {
+        document.getElementById('modalTitle').textContent = '➕ Создать событие';
+        document.getElementById('eventId').value = '';
+        document.getElementById('eventForm').reset();
+        document.getElementById('deleteBtn').style.display = 'none';
+        
+        // Устанавливаем выбранную дату в форме
+        document.getElementById('eventDate').value = this.formatDateForInput(this.selectedDate);
+        
+        document.getElementById('eventModal').classList.add('active');
+    }
+
+    showEventModal() {
+        document.getElementById('eventModal').classList.add('active');
+    }
+
+    hideEventModal() {
+        document.getElementById('eventModal').classList.remove('active');
+        document.getElementById('eventForm').reset();
+        document.getElementById('deleteBtn').style.display = 'none';
+    }
 }
 
+// Глобальные функции
 function showAddEventModal() {
-    document.getElementById('modalTitle').textContent = '➕ Создать событие';
-    document.getElementById('eventId').value = '';
-    document.getElementById('eventForm').reset();
-    document.getElementById('deleteBtn').style.display = 'none';
-    
-    // Устанавливаем выбранную дату в форме
-    document.getElementById('eventDate').value = calendar.formatDateForInput(calendar.selectedDate);
-    
-    document.getElementById('eventModal').classList.add('active');
-}
-
-function showEventModal() {
-    document.getElementById('eventModal').classList.add('active');
+    calendar.showAddEventModal();
 }
 
 function hideEventModal() {
-    document.getElementById('eventModal').classList.remove('active');
-    document.getElementById('eventForm').reset();
-    document.getElementById('deleteBtn').style.display = 'none';
+    calendar.hideEventModal();
 }
 
 function changeMonth(direction) {
