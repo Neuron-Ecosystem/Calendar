@@ -249,6 +249,11 @@ class NeuronCalendar {
             e.preventDefault();
             this.saveEvent();
         };
+
+        // Добавляем обработчик для кнопки удаления в форме
+        document.getElementById('deleteBtn').onclick = () => {
+            this.deleteEventFromModal();
+        };
     }
 
     saveEvent() {
@@ -298,6 +303,19 @@ class NeuronCalendar {
         
         // Показываем уведомление об успешном сохранении
         this.showNotification(eventId ? 'Событие обновлено!' : 'Событие создано!');
+    }
+
+    // Новый метод для удаления события из модального окна
+    deleteEventFromModal() {
+        const eventId = document.getElementById('eventId').value;
+        if (eventId && confirm('Вы уверены, что хотите удалить это событие?')) {
+            this.events = this.events.filter(e => e.id !== eventId);
+            this.saveEvents();
+            this.renderCurrentView();
+            this.updateEventsSidebar();
+            this.hideEventModal();
+            this.showNotification('Событие удалено!');
+        }
     }
 
     showNotification(message) {
