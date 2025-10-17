@@ -2,9 +2,11 @@
 class NeuronCalendar {
     constructor() {
         this.currentDate = new Date();
+        this.selectedDate = new Date();
         this.events = this.loadEvents();
-        this.currentView = 'month'; // month, week, day
+        this.currentView = 'month';
         this.selectedEvent = null;
+        this.sidebarView = 'today';
         
         this.init();
     }
@@ -15,14 +17,12 @@ class NeuronCalendar {
         this.updateEventsSidebar();
     }
 
-    // Инициализация календаря
     render() {
         this.updateCurrentMonth();
         this.renderMonthView();
         this.setupEventForm();
     }
 
-    // Обновление отображаемого месяца
     updateCurrentMonth() {
         const monthNames = [
             'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
@@ -34,12 +34,10 @@ class NeuronCalendar {
         
         document.getElementById('currentMonth').textContent = `${month} ${year}`;
         
-        // Установка сегодняшней даты в форме
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('eventDate').value = today;
     }
 
-    // Рендер месячного вида
     renderMonthView() {
         const grid = document.getElementById('monthGrid');
         grid.innerHTML = '';
@@ -47,14 +45,10 @@ class NeuronCalendar {
         const year = this.currentDate.getFullYear();
         const month = this.currentDate.getMonth();
 
-        // Первый день месяца
         const firstDay = new Date(year, month, 1);
-        // Последний день месяца
         const lastDay = new Date(year, month + 1, 0);
-        // День недели первого дня (0 - воскресенье, 1 - понедельник)
         const firstDayIndex = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
 
-        // Дни предыдущего месяца
         const prevMonthLastDay = new Date(year, month, 0).getDate();
         for (let i = firstDayIndex - 1; i >= 0; i--) {
             const day = prevMonthLastDay - i;
@@ -62,24 +56,23 @@ class NeuronCalendar {
             this.createDayElement(date, true, grid);
         }
 
-        // Дни текущего месяца
         const daysInMonth = lastDay.getDate();
         for (let i = 1; i <= daysInMonth; i++) {
             const date = new Date(year, month, i);
             this.createDayElement(date, false, grid);
         }
 
-        // Дни следующего месяца
-        const totalCells = 42; // 6 недель
+        const totalCells = 42;
         const cellsFilled = firstDayIndex + daysInMonth;
         const nextMonthDays = totalCells - cellsFilled;
         for (let i = 1; i <= nextMonthDays; i++) {
             const date = new Date(year, month + 1, i);
             this.createDayElement(date, true, grid);
         }
+
+        this.updateSelection();
     }
 
-    // Создание элемента дня
     createDayElement(date, isOtherMonth, container) {
         const dayElement = document.createElement('div');
         dayElement.className = 'calendar-day';
@@ -92,14 +85,17 @@ class NeuronCalendar {
             dayElement.classList.add('today');
         }
 
+        if (this.isSelectedDate(date)) {
+            dayElement.classList.add('selected');
+        }
+
         const dayNumber = document.createElement('div');
         dayNumber.className = 'day-number';
         dayNumber.textContent = date.getDate();
         dayElement.appendChild(dayNumber);
 
-        // Добавление событий дня
         const dayEvents = this.getEventsForDate(date);
-        if (dayEvents.length > 0) {
+        if (dayEvents.length > 0 && !isOtherMonth) {
             const eventsContainer = document.createElement('div');
             eventsContainer.className = 'day-events';
             
@@ -110,7 +106,7 @@ class NeuronCalendar {
                 eventElement.style.background = event.color;
                 eventElement.onclick = (e) => {
                     e.stopPropagation();
-                    this.showEventDetails(event);
+                    this.showEventContextMenu(e, event);
                 };
                 eventsContainer.appendChild(eventElement);
             });
@@ -131,10 +127,16 @@ class NeuronCalendar {
             document.getElementById('eventDate').value = date.toISOString().split('T')[0];
         };
 
+        dayElement.oncontextmenu = (e) => {
+            e.preventDefault();
+            if (!isOtherMonth && dayEvents.length > 0) {
+                this.showDayContextMenu(e, date);
+            }
+        };
+
         container.appendChild(dayElement);
     }
 
-    // Проверка является ли дата сегодняшним днем
     isToday(date) {
         const today = new Date();
         return date.getDate() === today.getDate() &&
@@ -142,13 +144,35 @@ class NeuronCalendar {
                date.getFullYear() === today.getFullYear();
     }
 
-    // Получение событий для даты
+    isSelectedDate(date) {
+        return date.getDate() === this.selectedDate.getDate() &&
+               date.getMonth() === this.selectedDate.getMonth() &&
+               date.getFullYear() === this.selectedDate.getFullYear();
+    }
+
     getEventsForDate(date) {
         const dateString = date.toISOString().split('T')[0];
         return this.events.filter(event => event.date === dateString);
     }
 
-    // Смена месяца
+    getEventsForWeek() {
+        const startDate = new Date(this.selectedDate);
+        startDate.setDate(startDate.getDate() - 3);
+        
+        const endDate = new Date(this.selectedDate);
+        endDate.setDate(endDate.getDate() + 3);
+        
+        return this.events.filter(event => {
+            const eventDate = new Date(event.date);
+            return eventDate >= startDate && eventDate <= endDate;
+        });
+    }
+
+    getEventsForDay(date = this.selectedDate) {
+        const dateString = date.toISOString().split('T')[0];
+        return this.events.filter(event => event.date === dateString);
+    }
+
     changeMonth(direction) {
         this.currentDate.setMonth(this.currentDate.getMonth() + direction);
         this.renderMonthView();
@@ -156,27 +180,44 @@ class NeuronCalendar {
         this.updateEventsSidebar();
     }
 
-    // Переход на сегодня
     goToToday() {
         this.currentDate = new Date();
+        this.selectedDate = new Date();
         this.renderMonthView();
         this.updateCurrentMonth();
         this.updateEventsSidebar();
+        
+        if (this.currentView === 'week') {
+            this.renderWeekView();
+        } else if (this.currentView === 'day') {
+            this.renderDayView();
+        }
     }
 
-    // Выбор даты
     selectDate(date) {
-        // Снимаем выделение со всех дней
+        this.selectedDate = date;
+        this.renderMonthView();
+        this.updateEventsSidebar();
+        
+        if (this.currentView === 'week') {
+            this.renderWeekView();
+        } else if (this.currentView === 'day') {
+            this.renderDayView();
+        }
+    }
+
+    updateSelection() {
         document.querySelectorAll('.calendar-day').forEach(day => {
             day.classList.remove('selected');
         });
         
-        // Добавляем выделение выбранному дню
         const dayElements = document.querySelectorAll('.calendar-day');
         const selectedDay = Array.from(dayElements).find(day => {
             const dayNumber = day.querySelector('.day-number');
-            return dayNumber && parseInt(dayNumber.textContent) === date.getDate() &&
-                   !day.classList.contains('other-month');
+            return dayNumber && parseInt(dayNumber.textContent) === this.selectedDate.getDate() &&
+                   !day.classList.contains('other-month') &&
+                   this.currentDate.getMonth() === this.selectedDate.getMonth() &&
+                   this.currentDate.getFullYear() === this.selectedDate.getFullYear();
         });
         
         if (selectedDay) {
@@ -184,7 +225,6 @@ class NeuronCalendar {
         }
     }
 
-    // Настройка формы события
     setupEventForm() {
         const form = document.getElementById('eventForm');
         form.onsubmit = (e) => {
@@ -193,130 +233,341 @@ class NeuronCalendar {
         };
     }
 
-    // Сохранение события
     saveEvent() {
-        const form = document.getElementById('eventForm');
-        const formData = new FormData(form);
+        const eventId = document.getElementById('eventId').value;
+        const formData = new FormData(document.getElementById('eventForm'));
         
         const event = {
-            id: Date.now().toString(),
+            id: eventId || Date.now().toString(),
             title: document.getElementById('eventTitle').value,
             date: document.getElementById('eventDate').value,
             startTime: document.getElementById('eventStartTime').value,
             endTime: document.getElementById('eventEndTime').value,
             description: document.getElementById('eventDescription').value,
+            location: document.getElementById('eventLocation').value,
             color: document.querySelector('input[name="eventColor"]:checked').value,
-            createdAt: new Date().toISOString()
+            createdAt: eventId ? this.events.find(e => e.id === eventId)?.createdAt || new Date().toISOString() : new Date().toISOString()
         };
 
-        this.events.push(event);
+        if (eventId) {
+            const index = this.events.findIndex(e => e.id === eventId);
+            if (index !== -1) {
+                this.events[index] = event;
+            }
+        } else {
+            this.events.push(event);
+        }
+
         this.saveEvents();
-        this.renderMonthView();
+        this.renderCurrentView();
         this.updateEventsSidebar();
-        this.hideAddEventModal();
-        form.reset();
+        this.hideEventModal();
+        document.getElementById('eventForm').reset();
         
-        // Установка сегодняшней даты по умолчанию
         document.getElementById('eventDate').value = new Date().toISOString().split('T')[0];
     }
 
-    // Показать детали события
-    showEventDetails(event) {
-        this.selectedEvent = event;
-        
-        document.getElementById('eventDetailsTitle').textContent = event.title;
-        document.getElementById('eventDetailsDate').textContent = this.formatDate(event.date);
-        
-        let timeText = 'Весь день';
-        if (event.startTime && event.endTime) {
-            timeText = `${event.startTime} - ${event.endTime}`;
-        } else if (event.startTime) {
-            timeText = `С ${event.startTime}`;
-        }
-        document.getElementById('eventDetailsTime').textContent = timeText;
-        
-        document.getElementById('eventDetailsDescription').textContent = 
-            event.description || 'Нет описания';
-        
-        this.showEventDetailsModal();
-    }
-
-    // Удаление события
-    deleteEvent() {
-        if (this.selectedEvent) {
-            this.events = this.events.filter(e => e.id !== this.selectedEvent.id);
-            this.saveEvents();
-            this.renderMonthView();
-            this.updateEventsSidebar();
-            this.hideEventDetailsModal();
+    renderCurrentView() {
+        switch (this.currentView) {
+            case 'month':
+                this.renderMonthView();
+                break;
+            case 'week':
+                this.renderWeekView();
+                break;
+            case 'day':
+                this.renderDayView();
+                break;
         }
     }
 
-    // Форматирование даты
-    formatDate(dateString) {
-        const date = new Date(dateString);
+    renderWeekView() {
+        const daysContainer = document.getElementById('weekDaysContainer');
+        const daysHeader = document.getElementById('weekDaysHeader');
+        
+        daysHeader.innerHTML = '<div class="week-day-header">Время</div>';
+        daysContainer.innerHTML = '';
+
+        const startDate = new Date(this.selectedDate);
+        startDate.setDate(startDate.getDate() - 3);
+        
+        for (let i = 0; i < 7; i++) {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + i);
+            
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'week-day-header';
+            if (this.isToday(currentDate)) {
+                dayHeader.classList.add('today');
+            }
+            
+            const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+            const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+            
+            dayHeader.innerHTML = `
+                <div>${dayNames[currentDate.getDay()]}</div>
+                <div style="font-size: 1.2em; font-weight: bold;">${currentDate.getDate()}</div>
+                <div>${monthNames[currentDate.getMonth()]}</div>
+            `;
+            daysHeader.appendChild(dayHeader);
+
+            const dayColumn = document.createElement('div');
+            dayColumn.className = 'week-day-column';
+            dayColumn.onclick = () => this.selectDate(currentDate);
+
+            for (let hour = 0; hour < 24; hour++) {
+                const hourSlot = document.createElement('div');
+                hourSlot.className = 'week-hour-slot';
+                hourSlot.onclick = () => {
+                    this.selectDate(currentDate);
+                    this.showAddEventModal();
+                    document.getElementById('eventDate').value = currentDate.toISOString().split('T')[0];
+                    document.getElementById('eventStartTime').value = `${hour.toString().padStart(2, '0')}:00`;
+                    document.getElementById('eventEndTime').value = `${(hour + 1).toString().padStart(2, '0')}:00`;
+                };
+                dayColumn.appendChild(hourSlot);
+            }
+
+            const dayEvents = this.getEventsForDate(currentDate);
+            dayEvents.forEach(event => {
+                if (event.startTime) {
+                    const [hours, minutes] = event.startTime.split(':').map(Number);
+                    const startPosition = hours * 60 + minutes;
+                    const duration = event.endTime ? 
+                        (new Date(`2000-01-01 ${event.endTime}`) - new Date(`2000-01-01 ${event.startTime}`)) / (1000 * 60) : 60;
+                    
+                    const eventElement = document.createElement('div');
+                    eventElement.className = 'week-event';
+                    eventElement.textContent = event.title;
+                    eventElement.style.background = event.color;
+                    eventElement.style.top = `${(startPosition / 60) * 60}px`;
+                    eventElement.style.height = `${Math.max(duration / 60 * 60, 30)}px`;
+                    eventElement.onclick = (e) => {
+                        e.stopPropagation();
+                        this.showEventContextMenu(e, event);
+                    };
+                    dayColumn.appendChild(eventElement);
+                }
+            });
+
+            daysContainer.appendChild(dayColumn);
+        }
+    }
+
+    renderDayView() {
+        const dayTitle = document.getElementById('dayTitle');
+        const dayTimeline = document.getElementById('dayTimeline');
+        
         const options = { 
             day: 'numeric', 
             month: 'long', 
             year: 'numeric',
             weekday: 'long'
         };
-        return date.toLocaleDateString('ru-RU', options);
+        dayTitle.textContent = this.selectedDate.toLocaleDateString('ru-RU', options);
+        
+        dayTimeline.innerHTML = '';
+
+        const dayEvents = this.getEventsForDay();
+
+        for (let hour = 0; hour < 24; hour++) {
+            const hourSlot = document.createElement('div');
+            hourSlot.className = 'hour-slot';
+            
+            const hourLabel = document.createElement('div');
+            hourLabel.className = 'hour-label';
+            hourLabel.textContent = `${hour.toString().padStart(2, '0')}:00`;
+            hourSlot.appendChild(hourLabel);
+            
+            const hourContent = document.createElement('div');
+            hourContent.className = 'hour-content';
+            hourContent.onclick = () => {
+                this.showAddEventModal();
+                document.getElementById('eventDate').value = this.selectedDate.toISOString().split('T')[0];
+                document.getElementById('eventStartTime').value = `${hour.toString().padStart(2, '0')}:00`;
+                document.getElementById('eventEndTime').value = `${(hour + 1).toString().padStart(2, '0')}:00`;
+            };
+            hourSlot.appendChild(hourContent);
+
+            const hourEvents = dayEvents.filter(event => {
+                if (event.startTime) {
+                    const eventHour = parseInt(event.startTime.split(':')[0]);
+                    return eventHour === hour;
+                }
+                return false;
+            });
+
+            hourEvents.forEach(event => {
+                const eventElement = document.createElement('div');
+                eventElement.className = 'day-event';
+                eventElement.textContent = `${event.startTime} - ${event.title}`;
+                eventElement.style.background = event.color;
+                eventElement.onclick = (e) => {
+                    e.stopPropagation();
+                    this.showEventContextMenu(e, event);
+                };
+                hourContent.appendChild(eventElement);
+            });
+
+            dayTimeline.appendChild(hourSlot);
+        }
     }
 
-    // Обновление сайдбара событий
+    showEventContextMenu(e, event) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        this.selectedEvent = event;
+        const contextMenu = document.getElementById('contextMenu');
+        
+        contextMenu.style.left = e.pageX + 'px';
+        contextMenu.style.top = e.pageY + 'px';
+        contextMenu.classList.add('active');
+        
+        document.querySelectorAll('.event-card').forEach(card => {
+            card.classList.remove('context-menu-active');
+        });
+        
+        if (e.target.closest('.event-card')) {
+            e.target.closest('.event-card').classList.add('context-menu-active');
+        }
+
+        const hideContextMenu = () => {
+            contextMenu.classList.remove('active');
+            document.removeEventListener('click', hideContextMenu);
+            document.querySelectorAll('.event-card').forEach(card => {
+                card.classList.remove('context-menu-active');
+            });
+        };
+
+        setTimeout(() => {
+            document.addEventListener('click', hideContextMenu);
+        }, 100);
+    }
+
+    showDayContextMenu(e, date) {
+        e.preventDefault();
+        const contextMenu = document.getElementById('contextMenu');
+        
+        contextMenu.innerHTML = `
+            <div class="context-item" onclick="showAddEventModal(); document.getElementById('eventDate').value = '${date.toISOString().split('T')[0]}'">➕ Добавить событие</div>
+            <div class="context-item" onclick="calendar.selectDate(new Date('${date.toISOString()}')); calendar.updateEventsSidebar()">📅 Показать события</div>
+        `;
+        
+        contextMenu.style.left = e.pageX + 'px';
+        contextMenu.style.top = e.pageY + 'px';
+        contextMenu.classList.add('active');
+
+        const hideContextMenu = () => {
+            contextMenu.classList.remove('active');
+            document.removeEventListener('click', hideContextMenu);
+        };
+
+        setTimeout(() => {
+            document.addEventListener('click', hideContextMenu);
+        }, 100);
+    }
+
+    editEvent(event) {
+        this.selectedEvent = event;
+        document.getElementById('modalTitle').textContent = '✏️ Редактировать событие';
+        document.getElementById('eventId').value = event.id;
+        document.getElementById('eventTitle').value = event.title;
+        document.getElementById('eventDate').value = event.date;
+        document.getElementById('eventStartTime').value = event.startTime || '';
+        document.getElementById('eventEndTime').value = event.endTime || '';
+        document.getElementById('eventDescription').value = event.description || '';
+        document.getElementById('eventLocation').value = event.location || '';
+        
+        const colorRadio = document.querySelector(`input[name="eventColor"][value="${event.color}"]`);
+        if (colorRadio) {
+            colorRadio.checked = true;
+        }
+        
+        document.getElementById('deleteBtn').style.display = 'block';
+        this.showEventModal();
+    }
+
+    deleteEvent() {
+        if (this.selectedEvent) {
+            this.events = this.events.filter(e => e.id !== this.selectedEvent.id);
+            this.saveEvents();
+            this.renderCurrentView();
+            this.updateEventsSidebar();
+            this.hideEventModal();
+        }
+    }
+
     updateEventsSidebar() {
         const eventsList = document.getElementById('eventsList');
         const eventsCount = document.getElementById('eventsCount');
         
-        const today = new Date().toISOString().split('T')[0];
-        const todayEvents = this.getEventsForDate(new Date(today));
+        let filteredEvents = [];
+        let title = '';
+
+        if (this.sidebarView === 'today') {
+            const today = new Date().toISOString().split('T')[0];
+            filteredEvents = this.getEventsForDate(new Date(today));
+            title = 'Сегодня';
+        } else {
+            const today = new Date();
+            const nextWeek = new Date(today);
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            
+            filteredEvents = this.events.filter(event => {
+                const eventDate = new Date(event.date);
+                return eventDate >= today && eventDate <= nextWeek;
+            }).sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            title = 'Предстоящие';
+        }
+
+        eventsCount.textContent = `${filteredEvents.length} событий`;
         
-        eventsCount.textContent = `${todayEvents.length} событий`;
-        
-        if (todayEvents.length === 0) {
+        if (filteredEvents.length === 0) {
             eventsList.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-icon">📅</div>
-                    <p>Нет событий на сегодня</p>
-                    <button class="btn btn-outline" onclick="showAddEventModal()">Добавить первое событие</button>
+                    <p>Нет событий ${this.sidebarView === 'today' ? 'на сегодня' : 'на ближайшую неделю'}</p>
+                    <button class="btn btn-outline" onclick="showAddEventModal()">Добавить событие</button>
                 </div>
             `;
         } else {
-            eventsList.innerHTML = todayEvents.map(event => `
-                <div class="event-card" onclick="calendar.showEventDetails(${JSON.stringify(event).replace(/"/g, '&quot;')})">
+            eventsList.innerHTML = filteredEvents.map(event => `
+                <div class="event-card" onclick="calendar.showEventContextMenu(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})">
                     <div class="event-title">${event.title}</div>
                     <div class="event-time">
                         ${event.startTime && event.endTime ? `${event.startTime} - ${event.endTime}` : 'Весь день'}
                     </div>
+                    ${event.location ? `<div class="event-location">📍 ${event.location}</div>` : ''}
                     ${event.description ? `<div class="event-description">${event.description}</div>` : ''}
                 </div>
             `).join('');
         }
+
+        document.querySelector('.sidebar-header h3').textContent = `📋 События (${title})`;
     }
 
-    // Переключение вида
     toggleView() {
         const views = ['month', 'week', 'day'];
         const currentIndex = views.indexOf(this.currentView);
         const nextIndex = (currentIndex + 1) % views.length;
         this.currentView = views[nextIndex];
         
-        // Обновление UI
         document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
         document.getElementById(`${this.currentView}View`).classList.add('active');
         
         const toggleBtn = document.getElementById('viewToggle');
         const viewNames = { month: 'Месяц', week: 'Неделя', day: 'День' };
         toggleBtn.textContent = viewNames[this.currentView];
+
+        this.renderCurrentView();
     }
 
-    // Сохранение событий в localStorage
     saveEvents() {
         localStorage.setItem('neuronCalendar_events', JSON.stringify(this.events));
     }
 
-    // Загрузка событий из localStorage
     loadEvents() {
         try {
             const saved = localStorage.getItem('neuronCalendar_events');
@@ -326,28 +577,58 @@ class NeuronCalendar {
         }
     }
 
-    // Настройка обработчиков событий
     setupEventListeners() {
-        // Глобальные функции для HTML
         window.calendar = this;
+
+        document.querySelectorAll('.view-option').forEach(option => {
+            option.addEventListener('click', (e) => {
+                document.querySelectorAll('.view-option').forEach(opt => opt.classList.remove('active'));
+                e.target.classList.add('active');
+                this.sidebarView = e.target.dataset.view;
+                this.updateEventsSidebar();
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.context-menu')) {
+                document.getElementById('contextMenu').classList.remove('active');
+            }
+        });
     }
 }
 
-// Глобальные функции для модальных окон
 function showAddEventModal() {
-    document.getElementById('addEventModal').classList.add('active');
+    document.getElementById('modalTitle').textContent = '➕ Создать событие';
+    document.getElementById('eventId').value = '';
+    document.getElementById('eventForm').reset();
+    document.getElementById('deleteBtn').style.display = 'none';
+    
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('eventDate').value = today;
+    
+    document.getElementById('eventModal').classList.add('active');
 }
 
-function hideAddEventModal() {
-    document.getElementById('addEventModal').classList.remove('active');
+function showEventModal() {
+    document.getElementById('eventModal').classList.add('active');
 }
 
-function showEventDetailsModal() {
-    document.getElementById('eventDetailsModal').classList.add('active');
+function hideEventModal() {
+    document.getElementById('eventModal').classList.remove('active');
+    document.getElementById('eventForm').reset();
+    document.getElementById('deleteBtn').style.display = 'none';
 }
 
-function hideEventDetailsModal() {
-    document.getElementById('eventDetailsModal').classList.remove('active');
+function editSelectedEvent() {
+    if (calendar.selectedEvent) {
+        calendar.editEvent(calendar.selectedEvent);
+    }
+}
+
+function deleteSelectedEvent() {
+    if (calendar.selectedEvent && confirm('Вы уверены, что хотите удалить это событие?')) {
+        calendar.deleteEvent();
+    }
 }
 
 function changeMonth(direction) {
@@ -362,7 +643,6 @@ function toggleView() {
     calendar.toggleView();
 }
 
-// Инициализация календаря при загрузке
 let calendar;
 document.addEventListener('DOMContentLoaded', () => {
     calendar = new NeuronCalendar();
