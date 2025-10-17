@@ -248,16 +248,18 @@ class NeuronCalendar {
         form.onsubmit = (e) => {
             e.preventDefault();
             this.saveEvent();
+            return false; // Предотвращаем повторную отправку
         };
     }
 
     saveEvent() {
         const eventId = document.getElementById('eventId').value;
         
+        // Получаем значения из формы
         const event = {
             id: eventId || Date.now().toString(),
             title: document.getElementById('eventTitle').value,
-            date: document.getElementById('eventDate').value, // Сохраняем как есть, без преобразования
+            date: document.getElementById('eventDate').value,
             startTime: document.getElementById('eventStartTime').value,
             endTime: document.getElementById('eventEndTime').value,
             description: document.getElementById('eventDescription').value,
@@ -266,23 +268,67 @@ class NeuronCalendar {
             createdAt: eventId ? this.events.find(e => e.id === eventId)?.createdAt || new Date().toISOString() : new Date().toISOString()
         };
 
+        // Проверяем обязательные поля
+        if (!event.title.trim()) {
+            alert('Пожалуйста, введите название события');
+            return;
+        }
+
+        if (!event.date) {
+            alert('Пожалуйста, выберите дату события');
+            return;
+        }
+
         if (eventId) {
+            // Редактирование существующего события
             const index = this.events.findIndex(e => e.id === eventId);
             if (index !== -1) {
                 this.events[index] = event;
             }
         } else {
+            // Создание нового события
             this.events.push(event);
         }
 
         this.saveEvents();
         this.renderCurrentView();
         this.updateEventsSidebar();
-        this.hideEventModal();
-        document.getElementById('eventForm').reset();
         
-        // После сохранения устанавливаем выбранную дату в форме
-        document.getElementById('eventDate').value = this.formatDateForInput(this.selectedDate);
+        // Закрываем модальное окно и сбрасываем форму
+        this.hideEventModal();
+        
+        // Показываем уведомление об успешном сохранении
+        this.showNotification(eventId ? 'Событие обновлено!' : 'Событие создано!');
+    }
+
+    showNotification(message) {
+        // Создаем временное уведомление
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 10000;
+            box-shadow: var(--shadow-lg);
+            animation: slideIn 0.3s ease;
+        `;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        // Удаляем уведомление через 3 секунды
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
     }
 
     renderCurrentView() {
@@ -537,7 +583,7 @@ class NeuronCalendar {
         document.getElementById('modalTitle').textContent = '✏️ Редактировать событие';
         document.getElementById('eventId').value = event.id;
         document.getElementById('eventTitle').value = event.title;
-        document.getElementById('eventDate').value = event.date; // Используем сохраненную дату как есть
+        document.getElementById('eventDate').value = event.date;
         document.getElementById('eventStartTime').value = event.startTime || '';
         document.getElementById('eventEndTime').value = event.endTime || '';
         document.getElementById('eventDescription').value = event.description || '';
@@ -560,6 +606,7 @@ class NeuronCalendar {
             this.renderCurrentView();
             this.updateEventsSidebar();
             this.hideEventModal();
+            this.showNotification('Событие удалено!');
         }
     }
 
@@ -690,18 +737,6 @@ function hideEventModal() {
     document.getElementById('eventModal').classList.remove('active');
     document.getElementById('eventForm').reset();
     document.getElementById('deleteBtn').style.display = 'none';
-}
-
-function editSelectedEvent() {
-    if (calendar.selectedEvent) {
-        calendar.editEvent(calendar.selectedEvent);
-    }
-}
-
-function deleteSelectedEvent() {
-    if (calendar.selectedEvent && confirm('Вы уверены, что хотите удалить это событие?')) {
-        calendar.deleteEvent();
-    }
 }
 
 function changeMonth(direction) {
