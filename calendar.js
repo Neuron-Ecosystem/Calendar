@@ -7,6 +7,7 @@ class NeuronCalendar {
         this.currentView = 'month';
         this.selectedEvent = null;
         this.sidebarView = 'today';
+        this.isMobile = this.checkMobile();
         
         this.init();
     }
@@ -15,6 +16,20 @@ class NeuronCalendar {
         this.render();
         this.setupEventListeners();
         this.updateEventsSidebar();
+        this.adjustForMobile();
+    }
+
+    checkMobile() {
+        return window.innerWidth <= 768;
+    }
+
+    adjustForMobile() {
+        if (this.isMobile) {
+            document.body.classList.add('mobile');
+            // На мобильных устройствах по умолчанию показываем день
+            this.currentView = 'month';
+            this.toggleView();
+        }
     }
 
     render() {
@@ -116,22 +131,28 @@ class NeuronCalendar {
             const eventsContainer = document.createElement('div');
             eventsContainer.className = 'day-events';
             
-            dayEvents.slice(0, 3).forEach(event => {
+            dayEvents.slice(0, 2).forEach(event => { // Показываем только 2 события на мобильных
                 const eventElement = document.createElement('div');
                 eventElement.className = 'event-preview';
                 eventElement.textContent = event.title;
                 eventElement.style.background = event.color;
-                eventElement.onclick = (e) => {
+                eventElement.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.showEventContextMenu(e, event);
-                };
+                });
+                eventElement.addEventListener('touchstart', (e) => {
+                    if (this.isMobile) {
+                        e.preventDefault();
+                        this.showEventContextMenu(e, event);
+                    }
+                });
                 eventsContainer.appendChild(eventElement);
             });
             
-            if (dayEvents.length > 3) {
+            if (dayEvents.length > 2) {
                 const moreElement = document.createElement('div');
                 moreElement.className = 'event-preview';
-                moreElement.textContent = `+${dayEvents.length - 3} еще`;
+                moreElement.textContent = `+${dayEvents.length - 2}`;
                 moreElement.style.background = 'var(--text-muted)';
                 eventsContainer.appendChild(moreElement);
             }
@@ -139,18 +160,37 @@ class NeuronCalendar {
             dayElement.appendChild(eventsContainer);
         }
 
-        dayElement.onclick = () => {
+        // Обработчики для мобильных и десктопных устройств
+        dayElement.addEventListener('click', () => {
             this.selectDate(date);
-            // Обновляем дату в форме при выборе дня
             document.getElementById('eventDate').value = this.formatDateForInput(date);
-        };
+        });
 
-        dayElement.oncontextmenu = (e) => {
-            e.preventDefault();
-            if (!isOtherMonth && dayEvents.length > 0) {
-                this.showDayContextMenu(e, date);
+        dayElement.addEventListener('touchstart', (e) => {
+            if (this.isMobile) {
+                e.preventDefault();
+                this.selectDate(date);
+                document.getElementById('eventDate').value = this.formatDateForInput(date);
             }
-        };
+        });
+
+        // Контекстное меню для долгого нажатия на мобильных
+        let touchTimer;
+        dayElement.addEventListener('touchstart', (e) => {
+            if (this.isMobile && !isOtherMonth && this.getEventsForDate(date).length > 0) {
+                touchTimer = setTimeout(() => {
+                    this.showDayContextMenu(e, date);
+                }, 500);
+            }
+        });
+
+        dayElement.addEventListener('touchend', () => {
+            clearTimeout(touchTimer);
+        });
+
+        dayElement.addEventListener('touchmove', () => {
+            clearTimeout(touchTimer);
+        });
 
         container.appendChild(dayElement);
     }
@@ -274,12 +314,12 @@ class NeuronCalendar {
 
         // Проверяем обязательные поля
         if (!event.title.trim()) {
-            alert('Пожалуйста, введите название события');
+            this.showNotification('Введите название события', 'error');
             return;
         }
 
         if (!event.date) {
-            alert('Пожалуйста, выберите дату события');
+            this.showNotification('Выберите дату события', 'error');
             return;
         }
 
@@ -308,30 +348,37 @@ class NeuronCalendar {
     // Новый метод для удаления события из модального окна
     deleteEventFromModal() {
         const eventId = document.getElementById('eventId').value;
-        if (eventId && confirm('Вы уверены, что хотите удалить это событие?')) {
-            this.events = this.events.filter(e => e.id !== eventId);
-            this.saveEvents();
-            this.renderCurrentView();
-            this.updateEventsSidebar();
-            this.hideEventModal();
-            this.showNotification('Событие удалено!');
+        if (eventId) {
+            if (confirm('Вы уверены, что хотите удалить это событие?')) {
+                this.events = this.events.filter(e => e.id !== eventId);
+                this.saveEvents();
+                this.renderCurrentView();
+                this.updateEventsSidebar();
+                this.hideEventModal();
+                this.showNotification('Событие удалено!');
+            }
         }
     }
 
-    showNotification(message) {
+    showNotification(message, type = 'success') {
         // Создаем временное уведомление
         const notification = document.createElement('div');
+        const backgroundColor = type === 'error' ? 'var(--danger-color)' : 'var(--primary-color)';
+        
         notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
-            background: var(--primary-color);
+            background: ${backgroundColor};
             color: white;
             padding: 12px 20px;
             border-radius: 8px;
             z-index: 10000;
             box-shadow: var(--shadow-lg);
             animation: slideIn 0.3s ease;
+            font-weight: 600;
+            max-width: 300px;
+            word-wrap: break-word;
         `;
         notification.textContent = message;
         
@@ -365,12 +412,22 @@ class NeuronCalendar {
     renderWeekView() {
         const daysContainer = document.getElementById('weekDaysContainer');
         const daysHeader = document.getElementById('weekDaysHeader');
+        const timeColumn = document.querySelector('.time-column');
         
         daysHeader.innerHTML = '<div class="week-day-header">Время</div>';
         daysContainer.innerHTML = '';
+        timeColumn.innerHTML = '';
 
         const startDate = new Date(this.selectedDate);
         startDate.setDate(startDate.getDate() - 3);
+        
+        // Генерируем временные слоты
+        for (let hour = 0; hour < 24; hour++) {
+            const timeSlot = document.createElement('div');
+            timeSlot.className = 'time-slot';
+            timeSlot.textContent = `${hour.toString().padStart(2, '0')}:00`;
+            timeColumn.appendChild(timeSlot);
+        }
         
         for (let i = 0; i < 7; i++) {
             const currentDate = new Date(startDate);
@@ -387,29 +444,28 @@ class NeuronCalendar {
             
             dayHeader.innerHTML = `
                 <div>${dayNames[currentDate.getDay()]}</div>
-                <div style="font-size: 1.2em; font-weight: bold;">${currentDate.getDate()}</div>
+                <div style="font-size: ${this.isMobile ? '1em' : '1.2em'}; font-weight: bold;">${currentDate.getDate()}</div>
                 <div>${monthNames[currentDate.getMonth()]}</div>
             `;
             daysHeader.appendChild(dayHeader);
 
             const dayColumn = document.createElement('div');
             dayColumn.className = 'week-day-column';
-            dayColumn.onclick = () => {
+            dayColumn.addEventListener('click', () => {
                 this.selectDate(currentDate);
-                // Обновляем дату в форме при выборе дня в недельном виде
                 document.getElementById('eventDate').value = this.formatDateForInput(currentDate);
-            };
+            });
 
             for (let hour = 0; hour < 24; hour++) {
                 const hourSlot = document.createElement('div');
                 hourSlot.className = 'week-hour-slot';
-                hourSlot.onclick = () => {
+                hourSlot.addEventListener('click', () => {
                     this.selectDate(currentDate);
                     this.showAddEventModal();
                     document.getElementById('eventDate').value = this.formatDateForInput(currentDate);
                     document.getElementById('eventStartTime').value = `${hour.toString().padStart(2, '0')}:00`;
                     document.getElementById('eventEndTime').value = `${(hour + 1).toString().padStart(2, '0')}:00`;
-                };
+                });
                 dayColumn.appendChild(hourSlot);
             }
 
@@ -425,12 +481,12 @@ class NeuronCalendar {
                     eventElement.className = 'week-event';
                     eventElement.textContent = event.title;
                     eventElement.style.background = event.color;
-                    eventElement.style.top = `${(startPosition / 60) * 60}px`;
-                    eventElement.style.height = `${Math.max(duration / 60 * 60, 30)}px`;
-                    eventElement.onclick = (e) => {
+                    eventElement.style.top = `${(startPosition / 60) * (this.isMobile ? 35 : 40)}px`;
+                    eventElement.style.height = `${Math.max(duration / 60 * (this.isMobile ? 35 : 40), 25)}px`;
+                    eventElement.addEventListener('click', (e) => {
                         e.stopPropagation();
                         this.showEventContextMenu(e, event);
-                    };
+                    });
                     dayColumn.appendChild(eventElement);
                 }
             });
@@ -466,12 +522,12 @@ class NeuronCalendar {
             
             const hourContent = document.createElement('div');
             hourContent.className = 'hour-content';
-            hourContent.onclick = () => {
+            hourContent.addEventListener('click', () => {
                 this.showAddEventModal();
                 document.getElementById('eventDate').value = this.formatDateForInput(this.selectedDate);
                 document.getElementById('eventStartTime').value = `${hour.toString().padStart(2, '0')}:00`;
                 document.getElementById('eventEndTime').value = `${(hour + 1).toString().padStart(2, '0')}:00`;
-            };
+            });
             hourSlot.appendChild(hourContent);
 
             const hourEvents = dayEvents.filter(event => {
@@ -487,10 +543,10 @@ class NeuronCalendar {
                 eventElement.className = 'day-event';
                 eventElement.textContent = `${event.startTime} - ${event.title}`;
                 eventElement.style.background = event.color;
-                eventElement.onclick = (e) => {
+                eventElement.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.showEventContextMenu(e, event);
-                };
+                });
                 hourContent.appendChild(eventElement);
             });
 
@@ -511,26 +567,30 @@ class NeuronCalendar {
         const editItem = document.createElement('div');
         editItem.className = 'context-item';
         editItem.textContent = '✏️ Редактировать';
-        editItem.onclick = () => {
+        editItem.addEventListener('click', () => {
             this.editEvent(event);
             contextMenu.classList.remove('active');
-        };
+        });
         
         const deleteItem = document.createElement('div');
         deleteItem.className = 'context-item';
         deleteItem.textContent = '🗑️ Удалить';
-        deleteItem.onclick = () => {
+        deleteItem.addEventListener('click', () => {
             if (confirm('Вы уверены, что хотите удалить это событие?')) {
                 this.deleteEvent();
             }
             contextMenu.classList.remove('active');
-        };
+        });
         
         contextMenu.appendChild(editItem);
         contextMenu.appendChild(deleteItem);
         
-        contextMenu.style.left = e.pageX + 'px';
-        contextMenu.style.top = e.pageY + 'px';
+        // Позиционируем контекстное меню
+        const x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const y = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        
+        contextMenu.style.left = x + 'px';
+        contextMenu.style.top = y + 'px';
         contextMenu.classList.add('active');
         
         document.querySelectorAll('.event-card').forEach(card => {
@@ -544,6 +604,7 @@ class NeuronCalendar {
         const hideContextMenu = () => {
             contextMenu.classList.remove('active');
             document.removeEventListener('click', hideContextMenu);
+            document.removeEventListener('touchstart', hideContextMenu);
             document.querySelectorAll('.event-card').forEach(card => {
                 card.classList.remove('context-menu-active');
             });
@@ -551,6 +612,7 @@ class NeuronCalendar {
 
         setTimeout(() => {
             document.addEventListener('click', hideContextMenu);
+            document.addEventListener('touchstart', hideContextMenu);
         }, 100);
     }
 
@@ -563,35 +625,40 @@ class NeuronCalendar {
         const addItem = document.createElement('div');
         addItem.className = 'context-item';
         addItem.textContent = '➕ Добавить событие';
-        addItem.onclick = () => {
+        addItem.addEventListener('click', () => {
             this.showAddEventModal();
             document.getElementById('eventDate').value = this.formatDateForInput(date);
             contextMenu.classList.remove('active');
-        };
+        });
         
         const showItem = document.createElement('div');
         showItem.className = 'context-item';
         showItem.textContent = '📅 Показать события';
-        showItem.onclick = () => {
+        showItem.addEventListener('click', () => {
             this.selectDate(date);
             this.updateEventsSidebar();
             contextMenu.classList.remove('active');
-        };
+        });
         
         contextMenu.appendChild(addItem);
         contextMenu.appendChild(showItem);
         
-        contextMenu.style.left = e.pageX + 'px';
-        contextMenu.style.top = e.pageY + 'px';
+        const x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const y = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        
+        contextMenu.style.left = x + 'px';
+        contextMenu.style.top = y + 'px';
         contextMenu.classList.add('active');
 
         const hideContextMenu = () => {
             contextMenu.classList.remove('active');
             document.removeEventListener('click', hideContextMenu);
+            document.removeEventListener('touchstart', hideContextMenu);
         };
 
         setTimeout(() => {
             document.addEventListener('click', hideContextMenu);
+            document.addEventListener('touchstart', hideContextMenu);
         }, 100);
     }
 
@@ -670,7 +737,7 @@ class NeuronCalendar {
                 });
                 
                 return `
-                <div class="event-card" oncontextmenu="calendar.showEventContextMenu(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})" onclick="calendar.showEventContextMenu(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})">
+                <div class="event-card" oncontextmenu="calendar.showEventContextMenu(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})" onclick="calendar.showEventContextMenu(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})" ontouchstart="calendar.showEventContextMenu(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})">
                     <div class="event-title">${event.title}</div>
                     <div class="event-time">
                         ${event.startTime && event.endTime ? `${event.startTime} - ${event.endTime}` : 'Весь день'}
@@ -726,10 +793,23 @@ class NeuronCalendar {
             });
         });
 
+        // Обработчики для закрытия контекстного меню
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.context-menu')) {
                 document.getElementById('contextMenu').classList.remove('active');
             }
+        });
+
+        document.addEventListener('touchstart', (e) => {
+            if (!e.target.closest('.context-menu')) {
+                document.getElementById('contextMenu').classList.remove('active');
+            }
+        });
+
+        // Обработчик изменения размера окна
+        window.addEventListener('resize', () => {
+            this.isMobile = this.checkMobile();
+            this.adjustForMobile();
         });
     }
 
@@ -764,6 +844,22 @@ function showAddEventModal() {
 
 function hideEventModal() {
     calendar.hideEventModal();
+}
+
+function deleteEventFromModal() {
+    calendar.deleteEventFromModal();
+}
+
+function editSelectedEvent() {
+    if (calendar.selectedEvent) {
+        calendar.editEvent(calendar.selectedEvent);
+    }
+}
+
+function deleteSelectedEvent() {
+    if (calendar.selectedEvent && confirm('Вы уверены, что хотите удалить это событие?')) {
+        calendar.deleteEvent();
+    }
 }
 
 function changeMonth(direction) {
