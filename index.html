@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neuron Calendar - Умный планировщик</title>
+    <link rel="stylesheet" href="calendar-style.css">
+</head>
+<body>
+    <div class="calendar-container">
+        <!-- Header -->
+        <header class="calendar-header">
+            <div class="header-left">
+                <h1>📅 Neuron Calendar</h1>
+                <span class="subtitle">Умный планировщик от Neuron Ecosystem</span>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-primary" onclick="showAddEventModal()">+ Создать событие</button>
+                <button class="btn btn-secondary" onclick="toggleView()" id="viewToggle">Месяц</button>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <div class="calendar-navigation">
+            <button class="nav-btn" onclick="changeMonth(-1)">◀</button>
+            <div class="current-month" id="currentMonth"></div>
+            <button class="nav-btn" onclick="changeMonth(1)">▶</button>
+            <button class="btn today-btn" onclick="goToToday()">Сегодня</button>
+        </div>
+
+        <!-- Calendar Views -->
+        <div class="calendar-views">
+            <!-- Month View -->
+            <div class="view month-view active" id="monthView">
+                <div class="weekdays-header">
+                    <div class="weekday">Пн</div>
+                    <div class="weekday">Вт</div>
+                    <div class="weekday">Ср</div>
+                    <div class="weekday">Чт</div>
+                    <div class="weekday">Пт</div>
+                    <div class="weekday">Сб</div>
+                    <div class="weekday">Вс</div>
+                </div>
+                <div class="month-grid" id="monthGrid"></div>
+            </div>
+
+            <!-- Week View -->
+            <div class="view week-view" id="weekView">
+                <div class="week-header">
+                    <div class="week-day" id="weekHeader"></div>
+                </div>
+                <div class="week-grid" id="weekGrid"></div>
+            </div>
+
+            <!-- Day View -->
+            <div class="view day-view" id="dayView">
+                <div class="day-header">
+                    <div class="day-title" id="dayTitle"></div>
+                </div>
+                <div class="day-timeline" id="dayTimeline"></div>
+            </div>
+        </div>
+
+        <!-- Events Sidebar -->
+        <div class="events-sidebar">
+            <div class="sidebar-header">
+                <h3>📋 События</h3>
+                <span class="events-count" id="eventsCount">0 событий</span>
+            </div>
+            <div class="events-list" id="eventsList">
+                <div class="empty-state">
+                    <div class="empty-icon">📅</div>
+                    <p>Нет событий на сегодня</p>
+                    <button class="btn btn-outline" onclick="showAddEventModal()">Добавить первое событие</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Event Modal -->
+    <div class="modal" id="addEventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Создать событие</h3>
+                <button class="close-btn" onclick="hideAddEventModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="eventForm">
+                    <div class="form-group">
+                        <label for="eventTitle">Название события</label>
+                        <input type="text" id="eventTitle" placeholder="Встреча, задача, напоминание..." required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="eventDate">Дата</label>
+                        <input type="date" id="eventDate" required>
+                    </div>
+                    
+                    <div class="time-group">
+                        <div class="form-group">
+                            <label for="eventStartTime">Время начала</label>
+                            <input type="time" id="eventStartTime">
+                        </div>
+                        <div class="form-group">
+                            <label for="eventEndTime">Время окончания</label>
+                            <input type="time" id="eventEndTime">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="eventDescription">Описание</label>
+                        <textarea id="eventDescription" placeholder="Дополнительные детали..." rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="eventColor">Цвет</label>
+                        <div class="color-picker">
+                            <input type="radio" name="eventColor" value="#6366f1" id="color1" checked>
+                            <label for="color1" style="background: #6366f1"></label>
+                            
+                            <input type="radio" name="eventColor" value="#10b981" id="color2">
+                            <label for="color2" style="background: #10b981"></label>
+                            
+                            <input type="radio" name="eventColor" value="#f59e0b" id="color3">
+                            <label for="color3" style="background: #f59e0b"></label>
+                            
+                            <input type="radio" name="eventColor" value="#ef4444" id="color4">
+                            <label for="color4" style="background: #ef4444"></label>
+                            
+                            <input type="radio" name="eventColor" value="#8b5cf6" id="color5">
+                            <label for="color5" style="background: #8b5cf6"></label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="hideAddEventModal()">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить событие</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Details Modal -->
+    <div class="modal" id="eventDetailsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="eventDetailsTitle">Детали события</h3>
+                <button class="close-btn" onclick="hideEventDetailsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="event-details">
+                    <div class="detail-item">
+                        <span class="detail-label">📅 Дата:</span>
+                        <span id="eventDetailsDate"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">⏰ Время:</span>
+                        <span id="eventDetailsTime"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">📝 Описание:</span>
+                        <span id="eventDetailsDescription"></span>
+                    </div>
+                </div>
+                <div class="event-actions">
+                    <button class="btn btn-danger" onclick="deleteEvent()">Удалить</button>
+                    <button class="btn btn-secondary" onclick="hideEventDetailsModal()">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="calendar.js"></script>
+</body>
+</html>
