@@ -34,8 +34,8 @@ class NeuronCalendar {
         
         document.getElementById('currentMonth').textContent = `${month} ${year}`;
         
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('eventDate').value = today;
+        // Устанавливаем выбранную дату в форме, а не сегодняшнюю
+        document.getElementById('eventDate').value = this.selectedDate.toISOString().split('T')[0];
     }
 
     renderMonthView() {
@@ -124,6 +124,7 @@ class NeuronCalendar {
 
         dayElement.onclick = () => {
             this.selectDate(date);
+            // Обновляем дату в форме при выборе дня
             document.getElementById('eventDate').value = date.toISOString().split('T')[0];
         };
 
@@ -264,7 +265,8 @@ class NeuronCalendar {
         this.hideEventModal();
         document.getElementById('eventForm').reset();
         
-        document.getElementById('eventDate').value = new Date().toISOString().split('T')[0];
+        // После сохранения устанавливаем выбранную дату в форме
+        document.getElementById('eventDate').value = this.selectedDate.toISOString().split('T')[0];
     }
 
     renderCurrentView() {
@@ -313,7 +315,11 @@ class NeuronCalendar {
 
             const dayColumn = document.createElement('div');
             dayColumn.className = 'week-day-column';
-            dayColumn.onclick = () => this.selectDate(currentDate);
+            dayColumn.onclick = () => {
+                this.selectDate(currentDate);
+                // Обновляем дату в форме при выборе дня в недельном виде
+                document.getElementById('eventDate').value = currentDate.toISOString().split('T')[0];
+            };
 
             for (let hour = 0; hour < 24; hour++) {
                 const hourSlot = document.createElement('div');
@@ -419,6 +425,12 @@ class NeuronCalendar {
         
         this.selectedEvent = event;
         const contextMenu = document.getElementById('contextMenu');
+        
+        // Очищаем и создаем новые пункты меню
+        contextMenu.innerHTML = `
+            <div class="context-item" onclick="editSelectedEvent()">✏️ Редактировать</div>
+            <div class="context-item" onclick="deleteSelectedEvent()">🗑️ Удалить</div>
+        `;
         
         contextMenu.style.left = e.pageX + 'px';
         contextMenu.style.top = e.pageY + 'px';
@@ -534,7 +546,7 @@ class NeuronCalendar {
             `;
         } else {
             eventsList.innerHTML = filteredEvents.map(event => `
-                <div class="event-card" onclick="calendar.showEventContextMenu(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})">
+                <div class="event-card" oncontextmenu="calendar.showEventContextMenu(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})" onclick="calendar.showEventContextMenu(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})">
                     <div class="event-title">${event.title}</div>
                     <div class="event-time">
                         ${event.startTime && event.endTime ? `${event.startTime} - ${event.endTime}` : 'Весь день'}
@@ -603,8 +615,8 @@ function showAddEventModal() {
     document.getElementById('eventForm').reset();
     document.getElementById('deleteBtn').style.display = 'none';
     
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('eventDate').value = today;
+    // Устанавливаем выбранную дату в форме, а не сегодняшнюю
+    document.getElementById('eventDate').value = calendar.selectedDate.toISOString().split('T')[0];
     
     document.getElementById('eventModal').classList.add('active');
 }
