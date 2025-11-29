@@ -998,3 +998,331 @@ body {
         align-items: center;
     }
 }
+/* Добавьте эти стили в конец файла calendar-style.css */
+
+/* Login Screen Styles */
+.login-screen {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--background), var(--surface));
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.login-screen.active {
+    display: flex;
+}
+
+.login-container {
+    background: var(--surface);
+    border-radius: 15px;
+    padding: 30px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.login-header h1 {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.login-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    padding: 5px 0;
+    transition: color 0.3s ease;
+}
+
+.back-btn:hover {
+    color: var(--primary-color);
+}
+
+.login-form {
+    margin-bottom: 20px;
+}
+
+.btn-full {
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.btn-google {
+    width: 100%;
+    background: white;
+    color: #333;
+    border: 1px solid #ddd;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-google:hover {
+    background: #f8f9fa;
+    border-color: #ccc;
+    transform: translateY(-1px);
+}
+
+.login-divider {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.login-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border);
+    z-index: 1;
+}
+
+.login-divider span {
+    background: var(--surface);
+    padding: 0 15px;
+    position: relative;
+    z-index: 2;
+}
+
+.login-links {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.login-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: color 0.3s ease;
+}
+
+.login-links a:hover {
+    color: var(--primary-color);
+}
+
+.ecosystem-footer {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+/* App Header */
+.app-header {
+    background: var(--surface);
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid var(--primary-color);
+}
+
+.user-name {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.btn-logout {
+    background: var(--danger-color);
+    color: white;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+}
+
+.btn-logout:hover {
+    background: #dc2626;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 15, 35, 0.9);
+    z-index: 10001;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: white;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--surface-light);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+.loading-overlay p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* View Transition Animations */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+/* Calendar App Container */
+.calendar-app {
+    display: none;
+    height: 100vh;
+    flex-direction: column;
+}
+
+/* Enhanced button animations */
+.nav-btn, .btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-btn:active, .btn:active {
+    transform: scale(0.95);
+}
+
+/* Smooth transitions for calendar views */
+.view {
+    transition: opacity 0.3s ease;
+}
+
+/* Enhanced mobile styles */
+@media (max-width: 768px) {
+    .login-container {
+        padding: 20px;
+        margin: 10px;
+    }
+    
+    .login-header h1 {
+        font-size: 1.6rem;
+    }
+    
+    .user-info {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    
+    .user-name {
+        display: none;
+    }
+    
+    .app-header {
+        padding: 8px 15px;
+    }
+}
+
+/* Hover effects for calendar days */
+.calendar-day {
+    transition: all 0.2s ease;
+}
+
+.calendar-day:active {
+    transform: scale(0.95);
+}
+
+/* Enhanced modal animations */
+.modal-content {
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
