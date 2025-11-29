@@ -16,14 +16,22 @@ class NeuronCalendar {
 
     async init() {
         this.setupEventListeners();
-        this.setupAuthListener();
+        await this.setupAuthListener();
         this.adjustForMobile();
     }
 
     async setupAuthListener() {
+        // Wait for Firebase to be available
+        if (!window.firebase) {
+            console.error('Firebase not loaded');
+            setTimeout(() => this.setupAuthListener(), 100);
+            return;
+        }
+
         const { auth, onAuthStateChanged } = window.firebase.auth;
         
         onAuthStateChanged(auth, async (user) => {
+            console.log('Auth state changed:', user);
             if (user) {
                 this.user = user;
                 await this.showCalendarApp();
@@ -44,7 +52,11 @@ class NeuronCalendar {
         
         // Update user info
         document.getElementById('userName').textContent = this.user.displayName || this.user.email;
-        document.getElementById('userAvatar').src = this.user.photoURL || 'https://via.placeholder.com/40';
+        if (this.user.photoURL) {
+            document.getElementById('userAvatar').src = this.user.photoURL;
+        } else {
+            document.getElementById('userAvatar').src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(this.user.displayName || this.user.email) + '&background=6366f1&color=fff';
+        }
     }
 
     showLoginScreen() {
@@ -55,60 +67,79 @@ class NeuronCalendar {
     }
 
     async loadEventsFromFirebase() {
-        if (!this.user) return;
+        if (!this.user) {
+            console.log('No user, skipping events load');
+            return;
+        }
 
-        const { firestore, doc, getDoc, onSnapshot } = window.firebase.firestore;
-        const db = firestore.getFirestore();
+        console.log('Loading events for user:', this.user.uid);
+
+        const { firestore } = window.firebase;
+        const db = firestore.db;
         
         // Unsubscribe from previous listener
         if (this.unsubscribeEvents) {
             this.unsubscribeEvents();
         }
 
-        // Real-time updates
-        this.unsubscribeEvents = onSnapshot(doc(db, "users", this.user.uid, "data", "calendar"), 
-            async (docSnap) => {
-                this.showLoading(true);
-                
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    this.events = data.events || [];
-                    console.log('Events updated from Firebase:', this.events.length);
-                } else {
-                    this.events = [];
-                    // Create initial document
-                    await this.saveEventsToFirebase();
+        try {
+            // Real-time updates
+            this.unsubscribeEvents = firestore.onSnapshot(
+                firestore.doc(db, "users", this.user.uid, "data", "calendar"), 
+                (docSnap) => {
+                    this.showLoading(true);
+                    
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        this.events = data.events || [];
+                        console.log('Events updated from Firebase:', this.events.length);
+                    } else {
+                        this.events = [];
+                        console.log('No events found, creating initial document');
+                        // Create initial document
+                        this.saveEventsToFirebase();
+                    }
+                    
+                    this.renderCurrentView();
+                    this.updateEventsSidebar();
+                    
+                    setTimeout(() => this.showLoading(false), 500);
+                },
+                (error) => {
+                    console.error("Error loading events:", error);
+                    this.showNotification('Ошибка загрузки событий', 'error');
+                    this.showLoading(false);
                 }
-                
-                this.renderCurrentView();
-                this.updateEventsSidebar();
-                
-                setTimeout(() => this.showLoading(false), 500);
-            },
-            (error) => {
-                console.error("Error loading events:", error);
-                this.showNotification('Ошибка загрузки событий', 'error');
-                this.showLoading(false);
-            }
-        );
+            );
+        } catch (error) {
+            console.error("Error setting up events listener:", error);
+            this.showNotification('Ошибка подключения к базе данных', 'error');
+        }
     }
 
     async saveEventsToFirebase() {
-        if (!this.user) return;
+        if (!this.user) {
+            console.log('No user, skipping save');
+            return;
+        }
 
         try {
-            const { firestore, doc, setDoc } = window.firebase.firestore;
-            const db = firestore.getFirestore();
+            const { firestore } = window.firebase;
+            const db = firestore.db;
             
-            await setDoc(doc(db, "users", this.user.uid, "data", "calendar"), {
-                events: this.events,
-                lastUpdated: new Date().toISOString()
-            });
+            await firestore.setDoc(
+                firestore.doc(db, "users", this.user.uid, "data", "calendar"), 
+                {
+                    events: this.events,
+                    lastUpdated: new Date().toISOString(),
+                    userId: this.user.uid
+                }
+            );
             
             console.log('Events saved to Firebase');
         } catch (error) {
             console.error("Error saving events:", error);
-            this.showNotification('Ошибка сохранения событий', 'error');
+            this.showNotification('Ошибка сохранения событий: ' + error.message, 'error');
         }
     }
 
@@ -914,6 +945,11 @@ class NeuronCalendar {
 
 // Authentication Functions
 async function loginWithEmail() {
+    if (!window.firebase) {
+        alert('Firebase не загружен. Подождите немного и попробуйте снова.');
+        return;
+    }
+
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
     
@@ -933,6 +969,11 @@ async function loginWithEmail() {
 }
 
 async function registerWithEmail() {
+    if (!window.firebase) {
+        alert('Firebase не загружен. Подождите немного и попробуйте снова.');
+        return;
+    }
+
     const name = document.getElementById('registerName').value;
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
@@ -954,7 +995,7 @@ async function registerWithEmail() {
     }
 
     try {
-        const { auth, createUserWithEmailAndPassword } = window.firebase.auth;
+        const { auth, createUserWithEmailAndPassword, updateProfile } = window.firebase.auth;
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         
         // Update profile with name
@@ -971,6 +1012,11 @@ async function registerWithEmail() {
 }
 
 async function loginWithGoogle() {
+    if (!window.firebase) {
+        alert('Firebase не загружен. Подождите немного и попробуйте снова.');
+        return;
+    }
+
     try {
         const { auth, signInWithPopup, googleProvider } = window.firebase.auth;
         await signInWithPopup(auth, googleProvider);
@@ -982,6 +1028,11 @@ async function loginWithGoogle() {
 }
 
 async function resetPassword() {
+    if (!window.firebase) {
+        alert('Firebase не загружен. Подождите немного и попробуйте снова.');
+        return;
+    }
+
     const email = document.getElementById('forgotEmail').value;
     
     if (!email) {
@@ -1001,6 +1052,11 @@ async function resetPassword() {
 }
 
 async function logout() {
+    if (!window.firebase) {
+        alert('Firebase не загружен. Подождите немного и попробуйте снова.');
+        return;
+    }
+
     try {
         const { auth, signOut } = window.firebase.auth;
         await signOut(auth);
