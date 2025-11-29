@@ -1,22 +1,124 @@
-// Neuron Calendar - Умный планировщик
+// Neuron Calendar - Умный планировщик с Firebase синхронизацией
 class NeuronCalendar {
     constructor() {
         this.currentDate = new Date();
         this.selectedDate = new Date();
-        this.events = this.loadEvents();
+        this.events = [];
         this.currentView = 'month';
         this.selectedEvent = null;
         this.sidebarView = 'today';
         this.isMobile = this.checkMobile();
+        this.user = null;
+        this.unsubscribeEvents = null;
         
         this.init();
     }
 
-    init() {
-        this.render();
+    async init() {
         this.setupEventListeners();
-        this.updateEventsSidebar();
+        this.setupAuthListener();
         this.adjustForMobile();
+    }
+
+    async setupAuthListener() {
+        const { auth, onAuthStateChanged } = window.firebase.auth;
+        
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                this.user = user;
+                await this.showCalendarApp();
+                await this.loadEventsFromFirebase();
+                this.render();
+                this.updateEventsSidebar();
+            } else {
+                this.showLoginScreen();
+            }
+        });
+    }
+
+    async showCalendarApp() {
+        document.getElementById('loginScreen').classList.remove('active');
+        document.getElementById('registerScreen').classList.remove('active');
+        document.getElementById('forgotPasswordScreen').classList.remove('active');
+        document.getElementById('calendarApp').style.display = 'block';
+        
+        // Update user info
+        document.getElementById('userName').textContent = this.user.displayName || this.user.email;
+        document.getElementById('userAvatar').src = this.user.photoURL || 'https://via.placeholder.com/40';
+    }
+
+    showLoginScreen() {
+        document.getElementById('calendarApp').style.display = 'none';
+        document.getElementById('loginScreen').classList.add('active');
+        document.getElementById('registerScreen').classList.remove('active');
+        document.getElementById('forgotPasswordScreen').classList.remove('active');
+    }
+
+    async loadEventsFromFirebase() {
+        if (!this.user) return;
+
+        const { firestore, doc, getDoc, onSnapshot } = window.firebase.firestore;
+        const db = firestore.getFirestore();
+        
+        // Unsubscribe from previous listener
+        if (this.unsubscribeEvents) {
+            this.unsubscribeEvents();
+        }
+
+        // Real-time updates
+        this.unsubscribeEvents = onSnapshot(doc(db, "users", this.user.uid, "data", "calendar"), 
+            async (docSnap) => {
+                this.showLoading(true);
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    this.events = data.events || [];
+                    console.log('Events updated from Firebase:', this.events.length);
+                } else {
+                    this.events = [];
+                    // Create initial document
+                    await this.saveEventsToFirebase();
+                }
+                
+                this.renderCurrentView();
+                this.updateEventsSidebar();
+                
+                setTimeout(() => this.showLoading(false), 500);
+            },
+            (error) => {
+                console.error("Error loading events:", error);
+                this.showNotification('Ошибка загрузки событий', 'error');
+                this.showLoading(false);
+            }
+        );
+    }
+
+    async saveEventsToFirebase() {
+        if (!this.user) return;
+
+        try {
+            const { firestore, doc, setDoc } = window.firebase.firestore;
+            const db = firestore.getFirestore();
+            
+            await setDoc(doc(db, "users", this.user.uid, "data", "calendar"), {
+                events: this.events,
+                lastUpdated: new Date().toISOString()
+            });
+            
+            console.log('Events saved to Firebase');
+        } catch (error) {
+            console.error("Error saving events:", error);
+            this.showNotification('Ошибка сохранения событий', 'error');
+        }
+    }
+
+    showLoading(show) {
+        const overlay = document.getElementById('loadingOverlay');
+        if (show) {
+            overlay.classList.add('active');
+        } else {
+            overlay.classList.remove('active');
+        }
     }
 
     checkMobile() {
@@ -26,9 +128,6 @@ class NeuronCalendar {
     adjustForMobile() {
         if (this.isMobile) {
             document.body.classList.add('mobile');
-            // На мобильных устройствах по умолчанию показываем день
-            this.currentView = 'month';
-            this.toggleView();
         }
     }
 
@@ -53,7 +152,6 @@ class NeuronCalendar {
         document.getElementById('eventDate').value = this.formatDateForInput(this.selectedDate);
     }
 
-    // Форматирование даты для input[type="date"]
     formatDateForInput(date) {
         const year = date.getFullYear();
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -61,11 +159,10 @@ class NeuronCalendar {
         return `${year}-${month}-${day}`;
     }
 
-    // Преобразование строки даты в объект Date (исправление часового пояса)
     parseDateString(dateString) {
         const parts = dateString.split('-');
         const year = parseInt(parts[0]);
-        const month = parseInt(parts[1]) - 1; // месяцы от 0 до 11
+        const month = parseInt(parts[1]) - 1;
         const day = parseInt(parts[2]);
         return new Date(year, month, day);
     }
@@ -131,7 +228,7 @@ class NeuronCalendar {
             const eventsContainer = document.createElement('div');
             eventsContainer.className = 'day-events';
             
-            dayEvents.slice(0, 2).forEach(event => { // Показываем только 2 события на мобильных
+            dayEvents.slice(0, 2).forEach(event => {
                 const eventElement = document.createElement('div');
                 eventElement.className = 'event-preview';
                 eventElement.textContent = event.title;
@@ -160,7 +257,6 @@ class NeuronCalendar {
             dayElement.appendChild(eventsContainer);
         }
 
-        // Обработчики для мобильных и десктопных устройств
         dayElement.addEventListener('click', () => {
             this.selectDate(date);
             document.getElementById('eventDate').value = this.formatDateForInput(date);
@@ -174,7 +270,6 @@ class NeuronCalendar {
             }
         });
 
-        // Контекстное меню для долгого нажатия на мобильных
         let touchTimer;
         dayElement.addEventListener('touchstart', (e) => {
             if (this.isMobile && !isOtherMonth && this.getEventsForDate(date).length > 0) {
@@ -213,29 +308,23 @@ class NeuronCalendar {
         return this.events.filter(event => event.date === dateString);
     }
 
-    getEventsForWeek() {
-        const startDate = new Date(this.selectedDate);
-        startDate.setDate(startDate.getDate() - 3);
+    async changeMonth(direction) {
+        // Add animation
+        const grid = document.getElementById('monthGrid');
+        grid.style.animation = 'slideOut 0.3s ease';
         
-        const endDate = new Date(this.selectedDate);
-        endDate.setDate(endDate.getDate() + 3);
-        
-        return this.events.filter(event => {
-            const eventDate = this.parseDateString(event.date);
-            return eventDate >= startDate && eventDate <= endDate;
-        });
-    }
-
-    getEventsForDay(date = this.selectedDate) {
-        const dateString = this.formatDateForInput(date);
-        return this.events.filter(event => event.date === dateString);
-    }
-
-    changeMonth(direction) {
-        this.currentDate.setMonth(this.currentDate.getMonth() + direction);
-        this.renderMonthView();
-        this.updateCurrentMonth();
-        this.updateEventsSidebar();
+        setTimeout(() => {
+            this.currentDate.setMonth(this.currentDate.getMonth() + direction);
+            this.renderMonthView();
+            this.updateCurrentMonth();
+            this.updateEventsSidebar();
+            
+            grid.style.animation = 'slideIn 0.3s ease';
+            
+            setTimeout(() => {
+                grid.style.animation = '';
+            }, 300);
+        }, 150);
     }
 
     goToToday() {
@@ -290,16 +379,19 @@ class NeuronCalendar {
             this.saveEvent();
         };
 
-        // Добавляем обработчик для кнопки удаления в форме
         document.getElementById('deleteBtn').onclick = () => {
             this.deleteEventFromModal();
         };
     }
 
-    saveEvent() {
+    async saveEvent() {
+        if (!this.user) {
+            this.showNotification('Войдите в систему для сохранения событий', 'error');
+            return;
+        }
+
         const eventId = document.getElementById('eventId').value;
         
-        // Получаем значения из формы
         const event = {
             id: eventId || Date.now().toString(),
             title: document.getElementById('eventTitle').value,
@@ -309,10 +401,10 @@ class NeuronCalendar {
             description: document.getElementById('eventDescription').value,
             location: document.getElementById('eventLocation').value,
             color: document.querySelector('input[name="eventColor"]:checked').value,
-            createdAt: eventId ? this.events.find(e => e.id === eventId)?.createdAt || new Date().toISOString() : new Date().toISOString()
+            createdAt: eventId ? this.events.find(e => e.id === eventId)?.createdAt || new Date().toISOString() : new Date().toISOString(),
+            updatedAt: new Date().toISOString()
         };
 
-        // Проверяем обязательные поля
         if (!event.title.trim()) {
             this.showNotification('Введите название события', 'error');
             return;
@@ -323,37 +415,30 @@ class NeuronCalendar {
             return;
         }
 
+        this.showLoading(true);
+
         if (eventId) {
-            // Редактирование существующего события
             const index = this.events.findIndex(e => e.id === eventId);
             if (index !== -1) {
                 this.events[index] = event;
             }
         } else {
-            // Создание нового события
             this.events.push(event);
         }
 
-        this.saveEvents();
-        this.renderCurrentView();
-        this.updateEventsSidebar();
+        await this.saveEventsToFirebase();
         
-        // Закрываем модальное окно и сбрасываем форму
         this.hideEventModal();
-        
-        // Показываем уведомление об успешном сохранении
         this.showNotification(eventId ? 'Событие обновлено!' : 'Событие создано!');
     }
 
-    // Новый метод для удаления события из модального окна
-    deleteEventFromModal() {
+    async deleteEventFromModal() {
         const eventId = document.getElementById('eventId').value;
         if (eventId) {
             if (confirm('Вы уверены, что хотите удалить это событие?')) {
+                this.showLoading(true);
                 this.events = this.events.filter(e => e.id !== eventId);
-                this.saveEvents();
-                this.renderCurrentView();
-                this.updateEventsSidebar();
+                await this.saveEventsToFirebase();
                 this.hideEventModal();
                 this.showNotification('Событие удалено!');
             }
@@ -361,7 +446,6 @@ class NeuronCalendar {
     }
 
     showNotification(message, type = 'success') {
-        // Создаем временное уведомление
         const notification = document.createElement('div');
         const backgroundColor = type === 'error' ? 'var(--danger-color)' : 'var(--primary-color)';
         
@@ -384,7 +468,6 @@ class NeuronCalendar {
         
         document.body.appendChild(notification);
         
-        // Удаляем уведомление через 3 секунды
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => {
@@ -421,7 +504,6 @@ class NeuronCalendar {
         const startDate = new Date(this.selectedDate);
         startDate.setDate(startDate.getDate() - 3);
         
-        // Генерируем временные слоты
         for (let hour = 0; hour < 24; hour++) {
             const timeSlot = document.createElement('div');
             timeSlot.className = 'time-slot';
@@ -561,7 +643,6 @@ class NeuronCalendar {
         this.selectedEvent = event;
         const contextMenu = document.getElementById('contextMenu');
         
-        // Очищаем и создаем новые пункты меню
         contextMenu.innerHTML = '';
         
         const editItem = document.createElement('div');
@@ -585,7 +666,6 @@ class NeuronCalendar {
         contextMenu.appendChild(editItem);
         contextMenu.appendChild(deleteItem);
         
-        // Позиционируем контекстное меню
         const x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
         const y = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
         
@@ -673,7 +753,6 @@ class NeuronCalendar {
         document.getElementById('eventDescription').value = event.description || '';
         document.getElementById('eventLocation').value = event.location || '';
         
-        // Устанавливаем цвет события
         const colorRadios = document.querySelectorAll('input[name="eventColor"]');
         colorRadios.forEach(radio => {
             radio.checked = (radio.value === event.color);
@@ -683,12 +762,11 @@ class NeuronCalendar {
         this.showEventModal();
     }
 
-    deleteEvent() {
+    async deleteEvent() {
         if (this.selectedEvent) {
+            this.showLoading(true);
             this.events = this.events.filter(e => e.id !== this.selectedEvent.id);
-            this.saveEvents();
-            this.renderCurrentView();
-            this.updateEventsSidebar();
+            await this.saveEventsToFirebase();
             this.hideEventModal();
             this.showNotification('Событие удалено!');
         }
@@ -756,29 +834,30 @@ class NeuronCalendar {
         const views = ['month', 'week', 'day'];
         const currentIndex = views.indexOf(this.currentView);
         const nextIndex = (currentIndex + 1) % views.length;
-        this.currentView = views[nextIndex];
         
-        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-        document.getElementById(`${this.currentView}View`).classList.add('active');
+        // Add view transition animation
+        const currentViewElement = document.getElementById(`${this.currentView}View`);
+        const nextViewElement = document.getElementById(`${views[nextIndex]}View`);
+        
+        currentViewElement.style.animation = 'fadeOut 0.3s ease';
+        
+        setTimeout(() => {
+            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+            this.currentView = views[nextIndex];
+            nextViewElement.classList.add('active');
+            nextViewElement.style.animation = 'fadeIn 0.3s ease';
+            
+            this.renderCurrentView();
+            
+            setTimeout(() => {
+                currentViewElement.style.animation = '';
+                nextViewElement.style.animation = '';
+            }, 300);
+        }, 150);
         
         const toggleBtn = document.getElementById('viewToggle');
         const viewNames = { month: 'Месяц', week: 'Неделя', day: 'День' };
         toggleBtn.textContent = viewNames[this.currentView];
-
-        this.renderCurrentView();
-    }
-
-    saveEvents() {
-        localStorage.setItem('neuronCalendar_events', JSON.stringify(this.events));
-    }
-
-    loadEvents() {
-        try {
-            const saved = localStorage.getItem('neuronCalendar_events');
-            return saved ? JSON.parse(saved) : [];
-        } catch (e) {
-            return [];
-        }
     }
 
     setupEventListeners() {
@@ -793,7 +872,6 @@ class NeuronCalendar {
             });
         });
 
-        // Обработчики для закрытия контекстного меню
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.context-menu')) {
                 document.getElementById('contextMenu').classList.remove('active');
@@ -806,21 +884,18 @@ class NeuronCalendar {
             }
         });
 
-        // Обработчик изменения размера окна
         window.addEventListener('resize', () => {
             this.isMobile = this.checkMobile();
             this.adjustForMobile();
         });
     }
 
-    // Методы для работы с модальными окнами
     showAddEventModal() {
         document.getElementById('modalTitle').textContent = '➕ Создать событие';
         document.getElementById('eventId').value = '';
         document.getElementById('eventForm').reset();
         document.getElementById('deleteBtn').style.display = 'none';
         
-        // Устанавливаем выбранную дату в форме
         document.getElementById('eventDate').value = this.formatDateForInput(this.selectedDate);
         
         document.getElementById('eventModal').classList.add('active');
@@ -837,7 +912,123 @@ class NeuronCalendar {
     }
 }
 
-// Глобальные функции
+// Authentication Functions
+async function loginWithEmail() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    if (!email || !password) {
+        calendar.showNotification('Заполните все поля', 'error');
+        return;
+    }
+
+    try {
+        const { auth, signInWithEmailAndPassword } = window.firebase.auth;
+        await signInWithEmailAndPassword(auth, email, password);
+        calendar.showNotification('Вход выполнен успешно!');
+    } catch (error) {
+        console.error('Login error:', error);
+        calendar.showNotification('Ошибка входа: ' + error.message, 'error');
+    }
+}
+
+async function registerWithEmail() {
+    const name = document.getElementById('registerName').value;
+    const email = document.getElementById('registerEmail').value;
+    const password = document.getElementById('registerPassword').value;
+    const confirmPassword = document.getElementById('registerConfirmPassword').value;
+    
+    if (!name || !email || !password || !confirmPassword) {
+        calendar.showNotification('Заполните все поля', 'error');
+        return;
+    }
+    
+    if (password !== confirmPassword) {
+        calendar.showNotification('Пароли не совпадают', 'error');
+        return;
+    }
+    
+    if (password.length < 6) {
+        calendar.showNotification('Пароль должен быть не менее 6 символов', 'error');
+        return;
+    }
+
+    try {
+        const { auth, createUserWithEmailAndPassword } = window.firebase.auth;
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        
+        // Update profile with name
+        await updateProfile(userCredential.user, {
+            displayName: name
+        });
+        
+        calendar.showNotification('Аккаунт создан успешно!');
+        showLoginForm();
+    } catch (error) {
+        console.error('Registration error:', error);
+        calendar.showNotification('Ошибка регистрации: ' + error.message, 'error');
+    }
+}
+
+async function loginWithGoogle() {
+    try {
+        const { auth, signInWithPopup, googleProvider } = window.firebase.auth;
+        await signInWithPopup(auth, googleProvider);
+        calendar.showNotification('Вход через Google выполнен!');
+    } catch (error) {
+        console.error('Google login error:', error);
+        calendar.showNotification('Ошибка входа через Google: ' + error.message, 'error');
+    }
+}
+
+async function resetPassword() {
+    const email = document.getElementById('forgotEmail').value;
+    
+    if (!email) {
+        calendar.showNotification('Введите email', 'error');
+        return;
+    }
+
+    try {
+        const { auth, sendPasswordResetEmail } = window.firebase.auth;
+        await sendPasswordResetEmail(auth, email);
+        calendar.showNotification('Ссылка для сброса пароля отправлена на email');
+        showLoginForm();
+    } catch (error) {
+        console.error('Password reset error:', error);
+        calendar.showNotification('Ошибка: ' + error.message, 'error');
+    }
+}
+
+async function logout() {
+    try {
+        const { auth, signOut } = window.firebase.auth;
+        await signOut(auth);
+        calendar.showNotification('Выход выполнен');
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+}
+
+function showLoginForm() {
+    document.getElementById('loginScreen').classList.add('active');
+    document.getElementById('registerScreen').classList.remove('active');
+    document.getElementById('forgotPasswordScreen').classList.remove('active');
+}
+
+function showRegisterForm() {
+    document.getElementById('loginScreen').classList.remove('active');
+    document.getElementById('registerScreen').classList.add('active');
+    document.getElementById('forgotPasswordScreen').classList.remove('active');
+}
+
+function showForgotPassword() {
+    document.getElementById('loginScreen').classList.remove('active');
+    document.getElementById('registerScreen').classList.remove('active');
+    document.getElementById('forgotPasswordScreen').classList.add('active');
+}
+
+// Global Functions
 function showAddEventModal() {
     calendar.showAddEventModal();
 }
