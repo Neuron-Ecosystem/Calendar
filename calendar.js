@@ -1547,3 +1547,22 @@ let calendar;
 document.addEventListener('DOMContentLoaded', () => {
     calendar = new NeuronCalendar();
 });
+// Auto-inject mobile navigation when needed
+function setupMobileFeatures() {
+    if (window.innerWidth <= 768) {
+        // Add mobile-specific classes
+        document.body.classList.add('mobile-device');
+        
+        // Prevent zoom on input focus
+        document.addEventListener('touchstart', function() {}, {passive: true});
+        
+        // Improve touch scrolling
+        document.documentElement.style.setProperty('--vh', window.innerHeight * 0.01 + 'px');
+    }
+}
+
+// Update on resize
+window.addEventListener('resize', setupMobileFeatures);
+
+// Initial setup
+document.addEventListener('DOMContentLoaded', setupMobileFeatures);
