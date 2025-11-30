@@ -1936,3 +1936,82 @@ input[type="date"], input[type="time"] {
         min-height: 45px;
     }
 }
+/* Mobile Events Indicator */
+.mobile-events-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 1px;
+    margin-top: 1px;
+}
+
+.event-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--primary-color);
+}
+
+.event-dot.more-dots {
+    width: 6px;
+    height: 6px;
+    font-size: 0.4rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+/* Mobile context menu improvements */
+.context-menu {
+    max-width: 280px;
+    width: 90vw;
+}
+
+@media (max-width: 768px) {
+    .context-menu {
+        font-size: 0.9rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+}
+
+/* Mobile loading states */
+@media (max-width: 768px) {
+    .loading-overlay p {
+        font-size: 0.8rem;
+    }
+    
+    .loading-spinner {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+/* Mobile form improvements */
+@media (max-width: 768px) {
+    .color-picker {
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .color-picker label {
+        width: 30px;
+        height: 30px;
+    }
+}
+
+/* Mobile empty states */
+@media (max-width: 768px) {
+    .empty-state {
+        padding: 20px 10px;
+    }
+    
+    .empty-icon {
+        font-size: 2rem;
+    }
+    
+    .empty-state p {
+        font-size: 0.8rem;
+    }
+}
