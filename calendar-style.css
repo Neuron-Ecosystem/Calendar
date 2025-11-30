@@ -790,216 +790,6 @@ body {
     }
 }
 
-/* Мобильная адаптация */
-@media (max-width: 1024px) {
-    .calendar-container {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto 1fr auto;
-    }
-    
-    .events-sidebar {
-        grid-column: 1;
-        border-left: none;
-        border-top: 1px solid var(--border);
-        max-height: 300px;
-    }
-    
-    .ecosystem-links {
-        justify-content: center;
-    }
-}
-
-@media (max-width: 768px) {
-    .calendar-header {
-        flex-direction: column;
-        gap: 12px;
-        text-align: center;
-        padding: 12px 15px;
-    }
-    
-    .header-right {
-        justify-content: center;
-        width: 100%;
-    }
-    
-    .calendar-navigation {
-        flex-wrap: wrap;
-        gap: 10px;
-        padding: 10px 15px;
-    }
-    
-    .today-btn {
-        margin-left: 0;
-        order: 1;
-        width: 100%;
-        margin-top: 5px;
-    }
-    
-    .time-group {
-        grid-template-columns: 1fr;
-    }
-    
-    .form-actions {
-        flex-direction: column;
-    }
-    
-    .week-days-header {
-        grid-template-columns: 50px repeat(7, 1fr);
-    }
-    
-    .week-grid {
-        grid-template-columns: 50px 1fr;
-    }
-    
-    .time-slot {
-        font-size: 0.6rem;
-        height: 35px;
-    }
-    
-    .week-day-header {
-        min-width: 45px;
-        font-size: 0.65rem;
-        padding: 8px 3px;
-    }
-    
-    .calendar-views {
-        padding: 10px;
-    }
-    
-    .weekday {
-        padding: 10px 3px;
-        font-size: 0.75rem;
-    }
-    
-    .calendar-day {
-        min-height: 70px;
-        padding: 6px;
-    }
-    
-    .event-preview {
-        font-size: 0.55rem;
-        padding: 1px 3px;
-    }
-    
-    .hour-label {
-        width: 50px;
-        padding: 6px;
-        font-size: 0.75rem;
-    }
-    
-    .hour-content {
-        padding: 6px;
-    }
-    
-    .day-event {
-        font-size: 0.75rem;
-        padding: 4px 6px;
-    }
-}
-
-@media (max-width: 480px) {
-    .calendar-header h1 {
-        font-size: 1.3rem;
-    }
-    
-    .subtitle {
-        font-size: 0.75rem;
-    }
-    
-    .ecosystem-links {
-        gap: 8px;
-    }
-    
-    .ecosystem-links a {
-        font-size: 0.65rem;
-        padding: 3px 6px;
-    }
-    
-    .current-month {
-        font-size: 1rem;
-        min-width: 120px;
-    }
-    
-    .nav-btn {
-        width: 30px;
-        height: 30px;
-    }
-    
-    .btn {
-        padding: 6px 12px;
-        font-size: 0.75rem;
-    }
-    
-    .calendar-day {
-        min-height: 60px;
-    }
-    
-    .day-number {
-        font-size: 0.75rem;
-    }
-    
-    .events-sidebar {
-        padding: 12px;
-    }
-    
-    .modal-content {
-        margin: 5px;
-        max-height: 95vh;
-    }
-    
-    .modal-body {
-        padding: 12px;
-    }
-    
-    .form-group input,
-    .form-group textarea {
-        padding: 8px 10px;
-        font-size: 0.85rem;
-    }
-    
-    .color-picker label {
-        width: 22px;
-        height: 22px;
-    }
-}
-
-/* Touch device improvements */
-@media (hover: none) and (pointer: coarse) {
-    .calendar-day:hover {
-        background: var(--surface);
-    }
-    
-    .event-card:hover {
-        transform: none;
-        background: var(--surface);
-    }
-    
-    .btn:hover {
-        transform: none;
-    }
-    
-    .social-button:hover {
-        transform: none;
-    }
-    
-    /* Улучшения для тач-устройств */
-    .calendar-day {
-        min-height: 70px;
-    }
-    
-    .btn, .nav-btn {
-        min-height: 44px;
-        min-width: 44px;
-    }
-    
-    .context-item {
-        min-height: 44px;
-        display: flex;
-        align-items: center;
-    }
-}
-/* Добавьте эти стили в конец файла calendar-style.css */
-
 /* Login Screen Styles */
 .login-screen {
     display: none;
@@ -1215,807 +1005,12 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-/* View Transition Animations */
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes slideOut {
-    from {
-        opacity: 1;
-        transform: translateX(0);
-    }
-    to {
-        opacity: 0;
-        transform: translateX(-30px);
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes fadeOut {
-    from {
-        opacity: 1;
-    }
-    to {
-        opacity: 0;
-    }
-}
-
 /* Calendar App Container */
 .calendar-app {
     display: none;
     height: 100vh;
     flex-direction: column;
 }
-
-/* Enhanced button animations */
-.nav-btn, .btn {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.nav-btn:active, .btn:active {
-    transform: scale(0.95);
-}
-
-/* Smooth transitions for calendar views */
-.view {
-    transition: opacity 0.3s ease;
-}
-
-/* Enhanced mobile styles */
-@media (max-width: 768px) {
-    .login-container {
-        padding: 20px;
-        margin: 10px;
-    }
-    
-    .login-header h1 {
-        font-size: 1.6rem;
-    }
-    
-    .user-info {
-        flex-wrap: wrap;
-        justify-content: flex-end;
-    }
-    
-    .user-name {
-        display: none;
-    }
-    
-    .app-header {
-        padding: 8px 15px;
-    }
-}
-
-/* Hover effects for calendar days */
-.calendar-day {
-    transition: all 0.2s ease;
-}
-
-.calendar-day:active {
-    transform: scale(0.95);
-}
-
-/* Enhanced modal animations */
-.modal-content {
-    animation: modalSlideIn 0.3s ease;
-}
-
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9) translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-}
-/* Добавьте эти стили в конец файла calendar-style.css */
-
-/* Mobile First Approach */
-@media (max-width: 768px) {
-    /* General Mobile Styles */
-    body {
-        font-size: 14px;
-        -webkit-text-size-adjust: 100%;
-    }
-
-    /* Calendar Container Mobile Layout */
-    .calendar-container {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto 1fr;
-        height: 100vh;
-        gap: 0;
-    }
-
-    /* Header Mobile Optimization */
-    .calendar-header {
-        flex-direction: column;
-        gap: 12px;
-        padding: 12px 15px;
-        text-align: center;
-    }
-
-    .header-left h1 {
-        font-size: 1.3rem;
-        margin-bottom: 4px;
-    }
-
-    .subtitle {
-        font-size: 0.75rem;
-        margin-bottom: 8px;
-    }
-
-    .ecosystem-links {
-        justify-content: center;
-        gap: 6px;
-    }
-
-    .ecosystem-links a {
-        font-size: 0.65rem;
-        padding: 3px 6px;
-    }
-
-    .header-right {
-        justify-content: center;
-        width: 100%;
-        gap: 8px;
-    }
-
-    /* Navigation Mobile */
-    .calendar-navigation {
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 10px 15px;
-    }
-
-    .nav-btn {
-        width: 32px;
-        height: 32px;
-        font-size: 0.8rem;
-    }
-
-    .current-month {
-        font-size: 1rem;
-        min-width: 120px;
-        order: -1;
-        width: 100%;
-        margin-bottom: 5px;
-    }
-
-    .today-btn {
-        margin-left: 0;
-        order: 2;
-        width: auto;
-        flex: 1;
-    }
-
-    /* Buttons Mobile */
-    .btn {
-        padding: 8px 12px;
-        font-size: 0.75rem;
-        min-height: 40px;
-    }
-
-    /* Calendar Views Mobile */
-    .calendar-views {
-        padding: 8px;
-        overflow-x: hidden;
-    }
-
-    /* Month View Mobile */
-    .weekdays-header {
-        grid-template-columns: repeat(7, 1fr);
-        gap: 1px;
-    }
-
-    .weekday {
-        padding: 8px 2px;
-        font-size: 0.7rem;
-    }
-
-    .month-grid {
-        grid-template-columns: repeat(7, 1fr);
-        gap: 1px;
-    }
-
-    .calendar-day {
-        min-height: 60px;
-        padding: 4px;
-        position: relative;
-    }
-
-    .day-number {
-        font-size: 0.75rem;
-        width: 18px;
-        height: 18px;
-        margin-bottom: 2px;
-    }
-
-    .calendar-day.today .day-number {
-        width: 22px;
-        height: 22px;
-        font-size: 0.7rem;
-    }
-
-    .day-events {
-        gap: 0.5px;
-    }
-
-    .event-preview {
-        font-size: 0.5rem;
-        padding: 1px 2px;
-        min-height: 12px;
-        line-height: 1;
-    }
-
-    /* Week View Mobile */
-    .week-days-header {
-        grid-template-columns: 40px repeat(7, 1fr);
-        gap: 1px;
-    }
-
-    .week-day-header {
-        min-width: 35px;
-        font-size: 0.6rem;
-        padding: 6px 2px;
-    }
-
-    .week-grid {
-        grid-template-columns: 40px 1fr;
-        min-height: 300px;
-    }
-
-    .time-slot {
-        height: 30px;
-        font-size: 0.6rem;
-    }
-
-    .week-hour-slot {
-        height: 30px;
-    }
-
-    .week-event {
-        font-size: 0.5rem;
-        padding: 1px 2px;
-        line-height: 1.1;
-    }
-
-    /* Day View Mobile */
-    .day-header {
-        padding: 10px;
-    }
-
-    .day-title {
-        font-size: 1rem;
-        text-align: center;
-    }
-
-    .hour-slot {
-        min-height: 50px;
-    }
-
-    .hour-label {
-        width: 45px;
-        padding: 6px;
-        font-size: 0.7rem;
-    }
-
-    .hour-content {
-        padding: 6px;
-        min-height: 50px;
-    }
-
-    .day-event {
-        font-size: 0.7rem;
-        padding: 4px 6px;
-        left: 2px;
-        right: 2px;
-    }
-
-    /* Events Sidebar Mobile */
-    .events-sidebar {
-        grid-column: 1;
-        border-left: none;
-        border-top: 1px solid var(--border);
-        max-height: 40vh;
-        padding: 12px;
-    }
-
-    .sidebar-header {
-        flex-direction: column;
-        gap: 8px;
-        align-items: flex-start;
-    }
-
-    .sidebar-header h3 {
-        font-size: 0.9rem;
-    }
-
-    .events-count {
-        font-size: 0.65rem;
-    }
-
-    .view-selector {
-        width: 100%;
-    }
-
-    .view-option {
-        font-size: 0.65rem;
-        padding: 8px 6px;
-    }
-
-    .events-list {
-        gap: 6px;
-    }
-
-    .event-card {
-        padding: 10px;
-    }
-
-    .event-title {
-        font-size: 0.8rem;
-    }
-
-    .event-time,
-    .event-location,
-    .event-description {
-        font-size: 0.65rem;
-    }
-
-    /* Modal Mobile */
-    .modal {
-        padding: 5px;
-    }
-
-    .modal-content {
-        margin: 0;
-        max-height: 95vh;
-        border-radius: 12px 12px 0 0;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        top: auto;
-        max-width: none;
-        animation: modalSlideUp 0.3s ease;
-    }
-
-    .modal-header {
-        padding: 12px 15px;
-    }
-
-    .modal-header h3 {
-        font-size: 1.1rem;
-    }
-
-    .modal-body {
-        padding: 12px 15px;
-        max-height: 60vh;
-        overflow-y: auto;
-    }
-
-    .form-group input,
-    .form-group textarea {
-        padding: 10px;
-        font-size: 16px; /* Prevent zoom on iOS */
-    }
-
-    .time-group {
-        grid-template-columns: 1fr;
-        gap: 8px;
-    }
-
-    .form-actions {
-        flex-direction: column-reverse;
-        gap: 8px;
-        position: sticky;
-        bottom: 0;
-        background: var(--surface);
-        padding: 12px 0 0;
-        margin-top: 20px;
-    }
-
-    /* Context Menu Mobile */
-    .context-menu {
-        min-width: 160px;
-        font-size: 0.9rem;
-    }
-
-    .context-item {
-        padding: 12px 16px;
-        min-height: 44px;
-        display: flex;
-        align-items: center;
-    }
-
-    /* Login Screen Mobile */
-    .login-container {
-        margin: 10px;
-        padding: 20px;
-        border-radius: 12px;
-    }
-
-    .login-header h1 {
-        font-size: 1.6rem;
-    }
-
-    .login-subtitle {
-        font-size: 0.8rem;
-    }
-
-    /* App Header Mobile */
-    .app-header {
-        padding: 8px 12px;
-    }
-
-    .user-info {
-        gap: 8px;
-    }
-
-    .user-avatar {
-        width: 32px;
-        height: 32px;
-    }
-
-    .user-name {
-        font-size: 0.8rem;
-        display: none; /* Hide on mobile to save space */
-    }
-
-    .btn-logout {
-        padding: 6px 10px;
-        font-size: 0.7rem;
-    }
-}
-
-/* Small Phones */
-@media (max-width: 480px) {
-    .calendar-day {
-        min-height: 50px;
-        padding: 2px;
-    }
-
-    .day-number {
-        font-size: 0.7rem;
-        width: 16px;
-        height: 16px;
-    }
-
-    .calendar-day.today .day-number {
-        width: 20px;
-        height: 20px;
-    }
-
-    .event-preview {
-        font-size: 0.45rem;
-        padding: 0 1px;
-    }
-
-    .week-days-header {
-        grid-template-columns: 35px repeat(7, 1fr);
-    }
-
-    .week-day-header {
-        min-width: 30px;
-        font-size: 0.55rem;
-        padding: 4px 1px;
-    }
-
-    .week-grid {
-        grid-template-columns: 35px 1fr;
-    }
-
-    .time-slot {
-        height: 25px;
-        font-size: 0.55rem;
-    }
-
-    .week-hour-slot {
-        height: 25px;
-    }
-
-    .hour-label {
-        width: 40px;
-        padding: 4px;
-        font-size: 0.65rem;
-    }
-
-    .hour-content {
-        padding: 4px;
-        min-height: 45px;
-    }
-}
-
-/* Mobile Animations */
-@keyframes modalSlideUp {
-    from {
-        transform: translateY(100%);
-    }
-    to {
-        transform: translateY(0);
-    }
-}
-
-@keyframes slideFromBottom {
-    from {
-        transform: translateY(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideToBottom {
-    from {
-        transform: translateY(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateY(100%);
-        opacity: 0;
-    }
-}
-
-/* Touch Improvements */
-@media (hover: none) and (pointer: coarse) {
-    /* Better touch targets */
-    .btn, .nav-btn {
-        min-height: 44px;
-        min-width: 44px;
-    }
-
-    .calendar-day {
-        min-height: 60px;
-    }
-
-    .event-preview {
-        min-height: 16px;
-    }
-
-    /* Remove hover effects on touch devices */
-    .calendar-day:hover {
-        background: var(--surface);
-    }
-
-    .event-card:hover {
-        transform: none;
-        background: var(--surface);
-    }
-
-    .btn:hover {
-        transform: none;
-    }
-
-    /* Active states for touch feedback */
-    .calendar-day:active {
-        background: var(--surface-light);
-        transform: scale(0.98);
-    }
-
-    .btn:active, .nav-btn:active {
-        transform: scale(0.96);
-    }
-
-    .event-card:active {
-        background: var(--surface-lighter);
-        transform: translateX(2px);
-    }
-}
-
-/* Mobile Specific Utility Classes */
-.mobile-only {
-    display: none;
-}
-
-@media (max-width: 768px) {
-    .mobile-only {
-        display: block;
-    }
-
-    .desktop-only {
-        display: none;
-    }
-}
-
-/* Swipe gestures support */
-.calendar-views {
-    overflow-x: hidden;
-    touch-action: pan-y;
-}
-
-.month-grid, .week-grid, .day-timeline {
-    touch-action: pan-y;
-}
-
-/* Improved mobile scrolling */
-.events-sidebar, .modal-body {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-}
-
-/* Mobile bottom navigation (like Google Calendar) */
-.mobile-bottom-nav {
-    display: none;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    padding: 8px;
-    z-index: 1000;
-}
-
-@media (max-width: 768px) {
-    .mobile-bottom-nav {
-        display: flex;
-        justify-content: space-around;
-    }
-
-    .mobile-nav-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        padding: 8px 12px;
-        background: none;
-        border: none;
-        color: var(--text-secondary);
-        font-size: 0.7rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        flex: 1;
-        max-width: 80px;
-    }
-
-    .mobile-nav-item.active {
-        color: var(--primary-color);
-    }
-
-    .mobile-nav-icon {
-        font-size: 1.2rem;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Adjust calendar container for bottom nav */
-    .calendar-container {
-        padding-bottom: 60px;
-    }
-}
-
-/* Mobile date picker improvements */
-input[type="date"], input[type="time"] {
-    min-height: 44px;
-}
-
-/* Mobile keyboard avoidance */
-@media (max-width: 768px) {
-    .modal-content {
-        max-height: 80vh;
-    }
-}
-
-/* Landscape orientation support */
-@media (max-width: 768px) and (orientation: landscape) {
-    .calendar-container {
-        grid-template-rows: auto auto 1fr;
-    }
-
-    .events-sidebar {
-        max-height: 30vh;
-    }
-
-    .modal-content {
-        max-height: 70vh;
-    }
-
-    .month-grid .calendar-day {
-        min-height: 45px;
-    }
-}
-/* Mobile Events Indicator */
-.mobile-events-indicator {
-    display: flex;
-    justify-content: center;
-    gap: 1px;
-    margin-top: 1px;
-}
-
-.event-dot {
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--primary-color);
-}
-
-.event-dot.more-dots {
-    width: 6px;
-    height: 6px;
-    font-size: 0.4rem;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-}
-
-/* Mobile context menu improvements */
-.context-menu {
-    max-width: 280px;
-    width: 90vw;
-}
-
-@media (max-width: 768px) {
-    .context-menu {
-        font-size: 0.9rem;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    }
-}
-
-/* Mobile loading states */
-@media (max-width: 768px) {
-    .loading-overlay p {
-        font-size: 0.8rem;
-    }
-    
-    .loading-spinner {
-        width: 32px;
-        height: 32px;
-    }
-}
-
-/* Mobile form improvements */
-@media (max-width: 768px) {
-    .color-picker {
-        justify-content: center;
-        gap: 10px;
-    }
-    
-    .color-picker label {
-        width: 30px;
-        height: 30px;
-    }
-}
-
-/* Mobile empty states */
-@media (max-width: 768px) {
-    .empty-state {
-        padding: 20px 10px;
-    }
-    
-    .empty-icon {
-        font-size: 2rem;
-    }
-    
-    .empty-state p {
-        font-size: 0.8rem;
-    }
-}
-/* Добавьте эти стили в конец файла */
 
 /* Mobile Events Modal */
 .mobile-events-modal {
@@ -2172,29 +1167,6 @@ input[type="date"], input[type="time"] {
     margin-bottom: 15px;
 }
 
-/* Hide desktop sidebar on mobile */
-@media (max-width: 768px) {
-    .events-sidebar {
-        display: none !important;
-    }
-    
-    .calendar-container {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto 1fr;
-        padding-bottom: 0;
-    }
-    
-    /* Adjust calendar views to take full height */
-    .calendar-views {
-        height: 100%;
-    }
-    
-    /* Improve month grid for mobile */
-    .month-grid {
-        min-height: 60vh;
-    }
-}
-
 /* Backdrop click area */
 .mobile-events-backdrop {
     position: absolute;
@@ -2204,33 +1176,6 @@ input[type="date"], input[type="time"] {
     height: 100%;
     background: transparent;
     z-index: -1;
-}
-
-/* Improved mobile day styling */
-@media (max-width: 768px) {
-    .calendar-day {
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .calendar-day.has-events::after {
-        content: '';
-        position: absolute;
-        bottom: 2px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 4px;
-        height: 4px;
-        background: var(--primary-color);
-        border-radius: 50%;
-    }
-    
-    .calendar-day.multiple-events::after {
-        width: 12px;
-        height: 4px;
-        border-radius: 2px;
-        background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-    }
 }
 
 /* Animation for events modal */
@@ -2262,4 +1207,579 @@ input[type="date"], input[type="time"] {
 
 .mobile-events-modal.closing .mobile-events-content {
     animation: slideDownToBottom 0.3s ease;
+}
+
+/* Mobile First Approach */
+@media (max-width: 768px) {
+    /* General Mobile Styles */
+    body {
+        font-size: 14px;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    /* Calendar Container Mobile Layout */
+    .calendar-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr;
+        height: 100vh;
+        gap: 0;
+        padding-bottom: 0;
+    }
+
+    /* Hide desktop sidebar on mobile */
+    .events-sidebar {
+        display: none !important;
+    }
+
+    /* Header Mobile Optimization */
+    .calendar-header {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px 15px;
+        text-align: center;
+    }
+
+    .header-left h1 {
+        font-size: 1.3rem;
+        margin-bottom: 4px;
+    }
+
+    .subtitle {
+        font-size: 0.75rem;
+        margin-bottom: 8px;
+    }
+
+    .ecosystem-links {
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .ecosystem-links a {
+        font-size: 0.65rem;
+        padding: 3px 6px;
+    }
+
+    .header-right {
+        justify-content: center;
+        width: 100%;
+        gap: 8px;
+    }
+
+    /* Navigation Mobile */
+    .calendar-navigation {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 15px;
+    }
+
+    .nav-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
+    }
+
+    .current-month {
+        font-size: 1rem;
+        min-width: 120px;
+        order: -1;
+        width: 100%;
+        margin-bottom: 5px;
+    }
+
+    .today-btn {
+        margin-left: 0;
+        order: 2;
+        width: auto;
+        flex: 1;
+    }
+
+    /* Buttons Mobile */
+    .btn {
+        padding: 8px 12px;
+        font-size: 0.75rem;
+        min-height: 40px;
+    }
+
+    /* Calendar Views Mobile */
+    .calendar-views {
+        padding: 8px;
+        overflow-x: hidden;
+        height: 100%;
+    }
+
+    /* Month View Mobile */
+    .weekdays-header {
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+    }
+
+    .weekday {
+        padding: 8px 2px;
+        font-size: 0.7rem;
+    }
+
+    .month-grid {
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        min-height: 60vh;
+    }
+
+    .calendar-day {
+        min-height: 60px;
+        padding: 4px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .calendar-day.has-events::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 4px;
+        height: 4px;
+        background: var(--primary-color);
+        border-radius: 50%;
+    }
+    
+    .calendar-day.multiple-events::after {
+        width: 12px;
+        height: 4px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    }
+
+    .day-number {
+        font-size: 0.75rem;
+        width: 18px;
+        height: 18px;
+        margin-bottom: 2px;
+    }
+
+    .calendar-day.today .day-number {
+        width: 22px;
+        height: 22px;
+        font-size: 0.7rem;
+    }
+
+    .day-events {
+        display: none; /* Hide event previews on mobile */
+    }
+
+    /* Week View Mobile */
+    .week-days-header {
+        grid-template-columns: 40px repeat(7, 1fr);
+        gap: 1px;
+    }
+
+    .week-day-header {
+        min-width: 35px;
+        font-size: 0.6rem;
+        padding: 6px 2px;
+    }
+
+    .week-grid {
+        grid-template-columns: 40px 1fr;
+        min-height: 300px;
+    }
+
+    .time-slot {
+        height: 30px;
+        font-size: 0.6rem;
+    }
+
+    .week-hour-slot {
+        height: 30px;
+    }
+
+    .week-event {
+        font-size: 0.5rem;
+        padding: 1px 2px;
+        line-height: 1.1;
+    }
+
+    /* Day View Mobile */
+    .day-header {
+        padding: 10px;
+    }
+
+    .day-title {
+        font-size: 1rem;
+        text-align: center;
+    }
+
+    .hour-slot {
+        min-height: 50px;
+    }
+
+    .hour-label {
+        width: 45px;
+        padding: 6px;
+        font-size: 0.7rem;
+    }
+
+    .hour-content {
+        padding: 6px;
+        min-height: 50px;
+    }
+
+    .day-event {
+        font-size: 0.7rem;
+        padding: 4px 6px;
+        left: 2px;
+        right: 2px;
+    }
+
+    /* Modal Mobile */
+    .modal {
+        padding: 5px;
+    }
+
+    .modal-content {
+        margin: 0;
+        max-height: 95vh;
+        border-radius: 12px 12px 0 0;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        max-width: none;
+        animation: modalSlideUp 0.3s ease;
+    }
+
+    .modal-header {
+        padding: 12px 15px;
+    }
+
+    .modal-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .modal-body {
+        padding: 12px 15px;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        padding: 10px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+
+    .time-group {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+        gap: 8px;
+        position: sticky;
+        bottom: 0;
+        background: var(--surface);
+        padding: 12px 0 0;
+        margin-top: 20px;
+    }
+
+    /* Context Menu Mobile */
+    .context-menu {
+        min-width: 160px;
+        font-size: 0.9rem;
+        max-width: 280px;
+        width: 90vw;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .context-item {
+        padding: 12px 16px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Login Screen Mobile */
+    .login-container {
+        margin: 10px;
+        padding: 20px;
+        border-radius: 12px;
+    }
+
+    .login-header h1 {
+        font-size: 1.6rem;
+    }
+
+    .login-subtitle {
+        font-size: 0.8rem;
+    }
+
+    /* App Header Mobile */
+    .app-header {
+        padding: 8px 12px;
+    }
+
+    .user-info {
+        gap: 8px;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+    }
+
+    .user-name {
+        font-size: 0.8rem;
+        display: none; /* Hide on mobile to save space */
+    }
+
+    .btn-logout {
+        padding: 6px 10px;
+        font-size: 0.7rem;
+    }
+}
+
+/* Small Phones */
+@media (max-width: 480px) {
+    .calendar-day {
+        min-height: 50px;
+        padding: 2px;
+    }
+
+    .day-number {
+        font-size: 0.7rem;
+        width: 16px;
+        height: 16px;
+    }
+
+    .calendar-day.today .day-number {
+        width: 20px;
+        height: 20px;
+    }
+
+    .week-days-header {
+        grid-template-columns: 35px repeat(7, 1fr);
+    }
+
+    .week-day-header {
+        min-width: 30px;
+        font-size: 0.55rem;
+        padding: 4px 1px;
+    }
+
+    .week-grid {
+        grid-template-columns: 35px 1fr;
+    }
+
+    .time-slot {
+        height: 25px;
+        font-size: 0.55rem;
+    }
+
+    .week-hour-slot {
+        height: 25px;
+    }
+
+    .hour-label {
+        width: 40px;
+        padding: 4px;
+        font-size: 0.65rem;
+    }
+
+    .hour-content {
+        padding: 4px;
+        min-height: 45px;
+    }
+}
+
+/* Mobile Animations */
+@keyframes modalSlideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+/* Touch Improvements */
+@media (hover: none) and (pointer: coarse) {
+    /* Better touch targets */
+    .btn, .nav-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .calendar-day {
+        min-height: 60px;
+    }
+
+    /* Remove hover effects on touch devices */
+    .calendar-day:hover {
+        background: var(--surface);
+    }
+
+    .event-card:hover {
+        transform: none;
+        background: var(--surface);
+    }
+
+    .btn:hover {
+        transform: none;
+    }
+
+    /* Active states for touch feedback */
+    .calendar-day:active {
+        background: var(--surface-light);
+        transform: scale(0.98);
+    }
+
+    .btn:active, .nav-btn:active {
+        transform: scale(0.96);
+    }
+
+    .event-card:active {
+        background: var(--surface-lighter);
+        transform: translateX(2px);
+    }
+}
+
+/* Mobile bottom navigation */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 8px;
+    z-index: 1000;
+}
+
+@media (max-width: 768px) {
+    .mobile-bottom-nav {
+        display: flex;
+        justify-content: space-around;
+    }
+
+    .mobile-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 12px;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 0.7rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex: 1;
+        max-width: 80px;
+    }
+
+    .mobile-nav-item.active {
+        color: var(--primary-color);
+    }
+
+    .mobile-nav-icon {
+        font-size: 1.2rem;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Adjust calendar container for bottom nav */
+    .calendar-container {
+        padding-bottom: 60px;
+    }
+}
+
+/* Mobile form improvements */
+@media (max-width: 768px) {
+    .color-picker {
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .color-picker label {
+        width: 30px;
+        height: 30px;
+    }
+}
+
+/* Mobile empty states */
+@media (max-width: 768px) {
+    .empty-state {
+        padding: 20px 10px;
+    }
+    
+    .empty-icon {
+        font-size: 2rem;
+    }
+    
+    .empty-state p {
+        font-size: 0.8rem;
+    }
+    
+    .loading-overlay p {
+        font-size: 0.8rem;
+    }
+    
+    .loading-spinner {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+/* Swipe gestures support */
+.calendar-views {
+    overflow-x: hidden;
+    touch-action: pan-y;
+}
+
+.month-grid, .week-grid, .day-timeline {
+    touch-action: pan-y;
+}
+
+/* Improved mobile scrolling */
+.events-sidebar, .modal-body, .mobile-events-body {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+/* Mobile date picker improvements */
+input[type="date"], input[type="time"] {
+    min-height: 44px;
+}
+
+/* Mobile keyboard avoidance */
+@media (max-width: 768px) {
+    .modal-content {
+        max-height: 80vh;
+    }
+}
+
+/* Landscape orientation support */
+@media (max-width: 768px) and (orientation: landscape) {
+    .calendar-container {
+        grid-template-rows: auto auto 1fr;
+    }
+
+    .modal-content {
+        max-height: 70vh;
+    }
+
+    .month-grid .calendar-day {
+        min-height: 45px;
+    }
+    
+    .mobile-events-content {
+        max-height: 60vh;
+    }
 }
