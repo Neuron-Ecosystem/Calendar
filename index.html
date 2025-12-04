@@ -384,5 +384,31 @@
     </div>
 
     <script src="calendar.js"></script>
+        <!-- Mobile Events Modal -->
+    <div class="mobile-events-modal" id="mobileEventsModal">
+        <div class="mobile-events-backdrop" id="mobileEventsBackdrop"></div>
+        <div class="mobile-events-content">
+            <div class="mobile-events-header">
+                <div class="mobile-events-title">События дня</div>
+                <button class="mobile-events-close" aria-label="Закрыть">×</button>
+            </div>
+            <div class="mobile-events-body">
+                <div class="mobile-events-date" id="mobileEventsDate"></div>
+                <div class="mobile-events-list" id="mobileEventsList">
+                    <!-- Events will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <p>Синхронизация...</p>
+    </div>
+
+    <script src="calendar.js"></script>
+</body>
+</html>
 </body>
 </html>
