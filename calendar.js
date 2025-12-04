@@ -1,726 +1,5 @@
 // Neuron Calendar - Умный планировщик с Firebase синхронизацией
 class NeuronCalendar {
-    // Добавьте эти методы в класс NeuronCalendar
-
-// Mobile Events Modal Methods
-setupMobileEventsModal() {
-    if (!this.isMobile) return;
-
-    // Backdrop click to close
-    document.getElementById('mobileEventsBackdrop').addEventListener('click', () => {
-        this.hideMobileEvents();
-    });
-
-    // Swipe down to close
-    this.setupMobileEventsSwipe();
-}
-
-setupMobileEventsSwipe() {
-    const modal = document.getElementById('mobileEventsModal');
-    let startY = 0;
-    let currentY = 0;
-
-    modal.addEventListener('touchstart', (e) => {
-        startY = e.touches[0].clientY;
-    }, { passive: true });
-
-    modal.addEventListener('touchmove', (e) => {
-        if (startY === 0) return;
-        
-        currentY = e.touches[0].clientY;
-        const diff = currentY - startY;
-        
-        // Only allow swipe down
-        if (diff > 0) {
-            e.preventDefault();
-            const translateY = Math.min(diff, 100);
-            modal.querySelector('.mobile-events-content').style.transform = `translateY(${translateY}px)`;
-        }
-    }, { passive: false });
-
-    modal.addEventListener('touchend', () => {
-        if (startY === 0) return;
-
-        const diff = currentY - startY;
-        const threshold = 80; // Minimum swipe distance to close
-        
-        if (diff > threshold) {
-            this.hideMobileEvents();
-        } else {
-            // Reset position
-            modal.querySelector('.mobile-events-content').style.transform = 'translateY(0)';
-        }
-        
-        startY = 0;
-        currentY = 0;
-    }, { passive: true });
-}
-
-showMobileEvents(date, events) {
-    if (!this.isMobile) return;
-
-    const modal = document.getElementById('mobileEventsModal');
-    const dateElement = document.getElementById('mobileEventsDate');
-    const eventsList = document.getElementById('mobileEventsList');
-
-    // Format date
-    const options = { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    };
-    dateElement.textContent = date.toLocaleDateString('ru-RU', options);
-
-    // Populate events
-    if (events.length === 0) {
-        eventsList.innerHTML = `
-            <div class="mobile-events-empty">
-                <div class="mobile-events-empty-icon">📅</div>
-                <div class="mobile-events-empty-text">Нет событий на этот день</div>
-                <button class="btn btn-primary" onclick="hideMobileEvents(); showAddEventModal();">
-                    ➕ Добавить событие
-                </button>
-            </div>
-        `;
-    } else {
-        eventsList.innerHTML = events.map(event => `
-            <div class="mobile-event-card" 
-                 onclick="calendar.handleMobileEventClick(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})"
-                 ontouchstart="this.style.transform='scale(0.98)'"
-                 ontouchend="this.style.transform=''">
-                <div class="mobile-event-title">${event.title}</div>
-                ${event.startTime && event.endTime ? 
-                    `<div class="mobile-event-time">🕒 ${event.startTime} - ${event.endTime}</div>` : 
-                    '<div class="mobile-event-time">🕒 Весь день</div>'
-                }
-                ${event.location ? `<div class="mobile-event-location">📍 ${event.location}</div>` : ''}
-                ${event.description ? `<div class="mobile-event-description">${event.description}</div>` : ''}
-            </div>
-        `).join('');
-    }
-
-    // Show modal
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden'; // Prevent background scrolling
-}
-
-hideMobileEvents() {
-    const modal = document.getElementById('mobileEventsModal');
-    
-    modal.classList.add('closing');
-    setTimeout(() => {
-        modal.classList.remove('active', 'closing');
-        modal.querySelector('.mobile-events-content').style.transform = '';
-        document.body.style.overflow = ''; // Restore scrolling
-    }, 300);
-}
-
-handleMobileEventClick(domEvent, event) {
-    domEvent.stopPropagation();
-    this.showEventContextMenu(domEvent, event);
-    this.hideMobileEvents();
-}
-
-// Update mobile day element creation
-createMobileDayElement(date, isOtherMonth, container) {
-    const dayElement = document.createElement('div');
-    dayElement.className = 'calendar-day';
-    
-    if (isOtherMonth) {
-        dayElement.classList.add('other-month');
-    }
-    
-    if (this.isToday(date)) {
-        dayElement.classList.add('today');
-    }
-
-    if (this.isSelectedDate(date)) {
-        dayElement.classList.add('selected');
-    }
-
-    const dayEvents = this.getEventsForDate(date);
-    if (dayEvents.length > 0 && !isOtherMonth) {
-        dayElement.classList.add('has-events');
-        if (dayEvents.length > 1) {
-            dayElement.classList.add('multiple-events');
-        }
-    }
-
-    const dayNumber = document.createElement('div');
-    dayNumber.className = 'day-number';
-    dayNumber.textContent = date.getDate();
-    dayElement.appendChild(dayNumber);
-
-    // Enhanced touch handling for mobile
-    dayElement.addEventListener('click', () => {
-        this.handleMobileDayTap(date);
-    });
-
-    // Remove old long press context menu for mobile
-    // Keep only simple tap handling
-
-    container.appendChild(dayElement);
-}
-
-handleMobileDayTap(date) {
-    if (this.isMobile) {
-        const dayEvents = this.getEventsForDate(date);
-        this.selectedDate = date;
-        this.showMobileEvents(date, dayEvents);
-    } else {
-        this.selectDate(date);
-    }
-}
-
-// Update the existing init method
-async init() {
-    this.setupEventListeners();
-    await this.setupAuthListener();
-    this.adjustForMobile();
-    
-    if (this.isMobile) {
-        this.setupMobileGestures();
-        this.setupMobileNavigation();
-        this.setupMobileEventHandlers();
-        this.setupMobileEventsModal(); // Add this line
-    }
-}
-
-// Update renderMonthView for mobile
-renderMonthView() {
-    if (this.isMobile) {
-        this.createMobileMonthView();
-    } else {
-        // Original desktop month view logic
-        const grid = document.getElementById('monthGrid');
-        grid.innerHTML = '';
-
-        const year = this.currentDate.getFullYear();
-        const month = this.currentDate.getMonth();
-
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const firstDayIndex = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
-
-        const prevMonthLastDay = new Date(year, month, 0).getDate();
-        for (let i = firstDayIndex - 1; i >= 0; i--) {
-            const day = prevMonthLastDay - i;
-            const date = new Date(year, month - 1, day);
-            this.createDayElement(date, true, grid);
-        }
-
-        const daysInMonth = lastDay.getDate();
-        for (let i = 1; i <= daysInMonth; i++) {
-            const date = new Date(year, month, i);
-            this.createDayElement(date, false, grid);
-        }
-
-        const totalCells = 42;
-        const cellsFilled = firstDayIndex + daysInMonth;
-        const nextMonthDays = totalCells - cellsFilled;
-        for (let i = 1; i <= nextMonthDays; i++) {
-            const date = new Date(year, month + 1, i);
-            this.createDayElement(date, true, grid);
-        }
-
-        this.updateSelection();
-    }
-}
-
-// Update desktop day element creation (keep dots for desktop)
-createDayElement(date, isOtherMonth, container) {
-    const dayElement = document.createElement('div');
-    dayElement.className = 'calendar-day';
-    
-    if (isOtherMonth) {
-        dayElement.classList.add('other-month');
-    }
-    
-    if (this.isToday(date)) {
-        dayElement.classList.add('today');
-    }
-
-    if (this.isSelectedDate(date)) {
-        dayElement.classList.add('selected');
-    }
-
-    const dayNumber = document.createElement('div');
-    dayNumber.className = 'day-number';
-    dayNumber.textContent = date.getDate();
-    dayElement.appendChild(dayNumber);
-
-    const dayEvents = this.getEventsForDate(date);
-    if (dayEvents.length > 0 && !isOtherMonth) {
-        const eventsContainer = document.createElement('div');
-        eventsContainer.className = 'day-events';
-        
-        // Show event dots for desktop
-        if (this.isMobile) {
-            // For mobile, we use CSS indicators instead
-            dayElement.classList.add('has-events');
-            if (dayEvents.length > 1) {
-                dayElement.classList.add('multiple-events');
-            }
-        } else {
-            // For desktop, show event previews
-            dayEvents.slice(0, 2).forEach(event => {
-                const eventElement = document.createElement('div');
-                eventElement.className = 'event-preview';
-                eventElement.textContent = event.title;
-                eventElement.style.background = event.color;
-                eventElement.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.showEventContextMenu(e, event);
-                });
-                eventsContainer.appendChild(eventElement);
-            });
-            
-            if (dayEvents.length > 2) {
-                const moreElement = document.createElement('div');
-                moreElement.className = 'event-preview';
-                moreElement.textContent = `+${dayEvents.length - 2}`;
-                moreElement.style.background = 'var(--text-muted)';
-                eventsContainer.appendChild(moreElement);
-            }
-            
-            dayElement.appendChild(eventsContainer);
-        }
-    }
-
-    dayElement.addEventListener('click', () => {
-        if (this.isMobile) {
-            this.handleMobileDayTap(date);
-        } else {
-            this.selectDate(date);
-            document.getElementById('eventDate').value = this.formatDateForInput(date);
-        }
-    });
-
-    container.appendChild(dayElement);
-}
-    // Добавьте эти методы в класс NeuronCalendar
-
-// Mobile Optimization Methods
-setupMobileGestures() {
-    if (!this.isMobile) return;
-
-    let touchStartX = 0;
-    let touchStartY = 0;
-    const minSwipeDistance = 50;
-
-    const handleTouchStart = (e) => {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-    };
-
-    const handleTouchEnd = (e) => {
-        if (!touchStartX || !touchStartY) return;
-
-        const touchEndX = e.changedTouches[0].clientX;
-        const touchEndY = e.changedTouches[0].clientY;
-        const diffX = touchStartX - touchEndX;
-        const diffY = touchStartY - touchEndY;
-
-        // Only consider horizontal swipes with minimal vertical movement
-        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > minSwipeDistance) {
-            if (diffX > 0) {
-                // Swipe left - next month/week/day
-                this.handleSwipe('next');
-            } else {
-                // Swipe right - previous month/week/day
-                this.handleSwipe('prev');
-            }
-        }
-
-        touchStartX = 0;
-        touchStartY = 0;
-    };
-
-    // Add event listeners to calendar views
-    const views = ['monthView', 'weekView', 'dayView'];
-    views.forEach(viewId => {
-        const view = document.getElementById(viewId);
-        if (view) {
-            view.addEventListener('touchstart', handleTouchStart, { passive: true });
-            view.addEventListener('touchend', handleTouchEnd, { passive: true });
-        }
-    });
-}
-
-handleSwipe(direction) {
-    switch (this.currentView) {
-        case 'month':
-            this.changeMonth(direction === 'next' ? 1 : -1);
-            break;
-        case 'week':
-            this.changeWeek(direction === 'next' ? 1 : -1);
-            break;
-        case 'day':
-            this.changeDay(direction === 'next' ? 1 : -1);
-            break;
-    }
-}
-
-changeWeek(direction) {
-    this.selectedDate.setDate(this.selectedDate.getDate() + (direction * 7));
-    this.renderWeekView();
-    this.updateEventsSidebar();
-}
-
-changeDay(direction) {
-    this.selectedDate.setDate(this.selectedDate.getDate() + direction);
-    this.renderDayView();
-    this.updateEventsSidebar();
-}
-
-// Enhanced mobile rendering
-createMobileMonthView() {
-    const grid = document.getElementById('monthGrid');
-    grid.innerHTML = '';
-
-    const year = this.currentDate.getFullYear();
-    const month = this.currentDate.getMonth();
-
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const firstDayIndex = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
-
-    const prevMonthLastDay = new Date(year, month, 0).getDate();
-    
-    // Previous month days
-    for (let i = firstDayIndex - 1; i >= 0; i--) {
-        const day = prevMonthLastDay - i;
-        const date = new Date(year, month - 1, day);
-        this.createMobileDayElement(date, true, grid);
-    }
-
-    // Current month days
-    const daysInMonth = lastDay.getDate();
-    for (let i = 1; i <= daysInMonth; i++) {
-        const date = new Date(year, month, i);
-        this.createMobileDayElement(date, false, grid);
-    }
-
-    // Next month days
-    const totalCells = 42;
-    const cellsFilled = firstDayIndex + daysInMonth;
-    const nextMonthDays = totalCells - cellsFilled;
-    for (let i = 1; i <= nextMonthDays; i++) {
-        const date = new Date(year, month + 1, i);
-        this.createMobileDayElement(date, true, grid);
-    }
-
-    this.updateSelection();
-}
-
-createMobileDayElement(date, isOtherMonth, container) {
-    const dayElement = document.createElement('div');
-    dayElement.className = 'calendar-day';
-    
-    if (isOtherMonth) {
-        dayElement.classList.add('other-month');
-    }
-    
-    if (this.isToday(date)) {
-        dayElement.classList.add('today');
-    }
-
-    if (this.isSelectedDate(date)) {
-        dayElement.classList.add('selected');
-    }
-
-    const dayNumber = document.createElement('div');
-    dayNumber.className = 'day-number';
-    dayNumber.textContent = date.getDate();
-    dayElement.appendChild(dayNumber);
-
-    // On mobile, show dot indicators instead of event titles
-    const dayEvents = this.getEventsForDate(date);
-    if (dayEvents.length > 0 && !isOtherMonth) {
-        const eventsIndicator = document.createElement('div');
-        eventsIndicator.className = 'mobile-events-indicator';
-        
-        // Show up to 3 dots for events
-        const eventCount = Math.min(dayEvents.length, 3);
-        for (let i = 0; i < eventCount; i++) {
-            const dot = document.createElement('div');
-            dot.className = 'event-dot';
-            dot.style.background = dayEvents[i].color;
-            eventsIndicator.appendChild(dot);
-        }
-        
-        if (dayEvents.length > 3) {
-            const moreDot = document.createElement('div');
-            moreDot.className = 'event-dot more-dots';
-            moreDot.textContent = '+';
-            moreDot.style.background = 'var(--text-muted)';
-            eventsIndicator.appendChild(moreDot);
-        }
-        
-        dayElement.appendChild(eventsIndicator);
-    }
-
-    // Enhanced touch handling for mobile
-    dayElement.addEventListener('click', () => {
-        this.handleDayTap(date);
-    });
-
-    // Long press for context menu
-    let pressTimer;
-    dayElement.addEventListener('touchstart', (e) => {
-        pressTimer = setTimeout(() => {
-            this.showMobileDayContextMenu(e, date, dayEvents);
-        }, 500);
-    });
-
-    dayElement.addEventListener('touchend', () => {
-        clearTimeout(pressTimer);
-    });
-
-    dayElement.addEventListener('touchmove', () => {
-        clearTimeout(pressTimer);
-    });
-
-    container.appendChild(dayElement);
-}
-
-handleDayTap(date) {
-    if (this.isMobile) {
-        // On mobile, tapping a day switches to day view
-        this.selectedDate = date;
-        this.currentView = 'day';
-        this.updateView();
-        this.renderDayView();
-        this.updateEventsSidebar();
-    } else {
-        this.selectDate(date);
-    }
-}
-
-showMobileDayContextMenu(e, date, events) {
-    e.preventDefault();
-    
-    const contextMenu = document.getElementById('contextMenu');
-    contextMenu.innerHTML = '';
-    
-    const addEventItem = document.createElement('div');
-    addEventItem.className = 'context-item';
-    addEventItem.textContent = '➕ Добавить событие';
-    addEventItem.addEventListener('click', () => {
-        this.showAddEventModal();
-        document.getElementById('eventDate').value = this.formatDateForInput(date);
-        contextMenu.classList.remove('active');
-    });
-    
-    contextMenu.appendChild(addEventItem);
-
-    // Add quick event options if there are events
-    if (events.length > 0) {
-        const showEventsItem = document.createElement('div');
-        showEventsItem.className = 'context-item';
-        showEventsItem.textContent = `📅 Показать события (${events.length})`;
-        showEventsItem.addEventListener('click', () => {
-            this.selectDate(date);
-            this.updateEventsSidebar();
-            contextMenu.classList.remove('active');
-        });
-        contextMenu.appendChild(showEventsItem);
-    }
-
-    const goToDateItem = document.createElement('div');
-    goToDateItem.className = 'context-item';
-    goToDateItem.textContent = '📋 Перейти к дате';
-    goToDateItem.addEventListener('click', () => {
-        this.selectDate(date);
-        contextMenu.classList.remove('active');
-    });
-    contextMenu.appendChild(goToDateItem);
-
-    // Position context menu for mobile
-    const rect = e.target.getBoundingClientRect();
-    contextMenu.style.left = '50%';
-    contextMenu.style.top = '50%';
-    contextMenu.style.transform = 'translate(-50%, -50%)';
-    contextMenu.classList.add('active');
-
-    const hideContextMenu = () => {
-        contextMenu.classList.remove('active');
-        document.removeEventListener('click', hideContextMenu);
-        document.removeEventListener('touchstart', hideContextMenu);
-    };
-
-    setTimeout(() => {
-        document.addEventListener('click', hideContextMenu);
-        document.addEventListener('touchstart', hideContextMenu);
-    }, 100);
-}
-
-// Enhanced mobile modal handling
-showAddEventModal() {
-    document.getElementById('modalTitle').textContent = '➕ Создать событие';
-    document.getElementById('eventId').value = '';
-    document.getElementById('eventForm').reset();
-    document.getElementById('deleteBtn').style.display = 'none';
-    
-    document.getElementById('eventDate').value = this.formatDateForInput(this.selectedDate);
-    
-    const modal = document.getElementById('eventModal');
-    modal.classList.add('active');
-    
-    // Focus management for mobile
-    if (this.isMobile) {
-        setTimeout(() => {
-            document.getElementById('eventTitle')?.focus();
-        }, 300);
-    }
-}
-
-// Mobile view switching
-setupMobileNavigation() {
-    if (!this.isMobile) return;
-
-    // Create mobile bottom navigation
-    this.createMobileBottomNav();
-    
-    // Handle view switching
-    document.addEventListener('click', (e) => {
-        if (e.target.closest('.mobile-nav-item')) {
-            const view = e.target.closest('.mobile-nav-item').dataset.view;
-            this.switchMobileView(view);
-        }
-    });
-}
-
-createMobileBottomNav() {
-    const bottomNav = document.createElement('div');
-    bottomNav.className = 'mobile-bottom-nav';
-    bottomNav.innerHTML = `
-        <button class="mobile-nav-item ${this.currentView === 'month' ? 'active' : ''}" data-view="month">
-            <div class="mobile-nav-icon">📅</div>
-            <span>Месяц</span>
-        </button>
-        <button class="mobile-nav-item ${this.currentView === 'week' ? 'active' : ''}" data-view="week">
-            <div class="mobile-nav-icon">📆</div>
-            <span>Неделя</span>
-        </button>
-        <button class="mobile-nav-item ${this.currentView === 'day' ? 'active' : ''}" data-view="day">
-            <div class="mobile-nav-icon">📝</div>
-            <span>День</span>
-        </button>
-        <button class="mobile-nav-item" onclick="showAddEventModal()">
-            <div class="mobile-nav-icon">➕</div>
-            <span>Создать</span>
-        </button>
-    `;
-    
-    document.querySelector('.calendar-container').appendChild(bottomNav);
-}
-
-switchMobileView(view) {
-    if (this.currentView === view) return;
-    
-    this.currentView = view;
-    
-    // Update active state in bottom nav
-    document.querySelectorAll('.mobile-nav-item').forEach(item => {
-        item.classList.remove('active');
-        if (item.dataset.view === view) {
-            item.classList.add('active');
-        }
-    });
-    
-    this.updateView();
-    this.renderCurrentView();
-    this.updateEventsSidebar();
-}
-
-updateView() {
-    // Hide all views
-    document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-    
-    // Show current view
-    document.getElementById(`${this.currentView}View`).classList.add('active');
-    
-    // Update view toggle button text
-    const viewNames = { month: 'Месяц', week: 'Неделя', day: 'День' };
-    document.getElementById('viewToggle').textContent = viewNames[this.currentView];
-}
-
-// Enhanced mobile event handling
-setupMobileEventHandlers() {
-    if (!this.isMobile) return;
-
-    // Improved touch handling for events
-    document.addEventListener('touchstart', (e) => {
-        if (e.target.closest('.event-card') || e.target.closest('.event-preview')) {
-            // Add visual feedback
-            const element = e.target.closest('.event-card') || e.target.closest('.event-preview');
-            element.style.transform = 'scale(0.98)';
-        }
-    });
-
-    document.addEventListener('touchend', (e) => {
-        if (e.target.closest('.event-card') || e.target.closest('.event-preview')) {
-            const element = e.target.closest('.event-card') || e.target.closest('.event-preview');
-            element.style.transform = '';
-        }
-    });
-}
-
-// Update the existing init method to include mobile setup
-async init() {
-    this.setupEventListeners();
-    await this.setupAuthListener();
-    this.adjustForMobile();
-    
-    if (this.isMobile) {
-        this.setupMobileGestures();
-        this.setupMobileNavigation();
-        this.setupMobileEventHandlers();
-    }
-}
-
-// Update renderMonthView to use mobile version on mobile devices
-renderMonthView() {
-    if (this.isMobile) {
-        this.createMobileMonthView();
-    } else {
-        // Original month view logic
-        const grid = document.getElementById('monthGrid');
-        grid.innerHTML = '';
-
-        const year = this.currentDate.getFullYear();
-        const month = this.currentDate.getMonth();
-
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const firstDayIndex = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
-
-        const prevMonthLastDay = new Date(year, month, 0).getDate();
-        for (let i = firstDayIndex - 1; i >= 0; i--) {
-            const day = prevMonthLastDay - i;
-            const date = new Date(year, month - 1, day);
-            this.createDayElement(date, true, grid);
-        }
-
-        const daysInMonth = lastDay.getDate();
-        for (let i = 1; i <= daysInMonth; i++) {
-            const date = new Date(year, month, i);
-            this.createDayElement(date, false, grid);
-        }
-
-        const totalCells = 42;
-        const cellsFilled = firstDayIndex + daysInMonth;
-        const nextMonthDays = totalCells - cellsFilled;
-        for (let i = 1; i <= nextMonthDays; i++) {
-            const date = new Date(year, month + 1, i);
-            this.createDayElement(date, true, grid);
-        }
-
-        this.updateSelection();
-    }
-}
     constructor() {
         this.currentDate = new Date();
         this.selectedDate = new Date();
@@ -739,6 +18,10 @@ renderMonthView() {
         this.setupEventListeners();
         await this.setupAuthListener();
         this.adjustForMobile();
+        
+        if (this.isMobile) {
+            this.setupMobileEventsModal();
+        }
     }
 
     async setupAuthListener() {
@@ -977,66 +260,19 @@ renderMonthView() {
 
         const dayEvents = this.getEventsForDate(date);
         if (dayEvents.length > 0 && !isOtherMonth) {
-            const eventsContainer = document.createElement('div');
-            eventsContainer.className = 'day-events';
-            
-            dayEvents.slice(0, 2).forEach(event => {
-                const eventElement = document.createElement('div');
-                eventElement.className = 'event-preview';
-                eventElement.textContent = event.title;
-                eventElement.style.background = event.color;
-                eventElement.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.showEventContextMenu(e, event);
-                });
-                eventElement.addEventListener('touchstart', (e) => {
-                    if (this.isMobile) {
-                        e.preventDefault();
-                        this.showEventContextMenu(e, event);
-                    }
-                });
-                eventsContainer.appendChild(eventElement);
-            });
-            
-            if (dayEvents.length > 2) {
-                const moreElement = document.createElement('div');
-                moreElement.className = 'event-preview';
-                moreElement.textContent = `+${dayEvents.length - 2}`;
-                moreElement.style.background = 'var(--text-muted)';
-                eventsContainer.appendChild(moreElement);
+            dayElement.classList.add('has-events');
+            if (dayEvents.length > 1) {
+                dayElement.classList.add('multiple-events');
             }
-            
-            dayElement.appendChild(eventsContainer);
         }
 
         dayElement.addEventListener('click', () => {
-            this.selectDate(date);
-            document.getElementById('eventDate').value = this.formatDateForInput(date);
-        });
-
-        dayElement.addEventListener('touchstart', (e) => {
             if (this.isMobile) {
-                e.preventDefault();
+                this.handleMobileDayTap(date);
+            } else {
                 this.selectDate(date);
                 document.getElementById('eventDate').value = this.formatDateForInput(date);
             }
-        });
-
-        let touchTimer;
-        dayElement.addEventListener('touchstart', (e) => {
-            if (this.isMobile && !isOtherMonth && this.getEventsForDate(date).length > 0) {
-                touchTimer = setTimeout(() => {
-                    this.showDayContextMenu(e, date);
-                }, 500);
-            }
-        });
-
-        dayElement.addEventListener('touchend', () => {
-            clearTimeout(touchTimer);
-        });
-
-        dayElement.addEventListener('touchmove', () => {
-            clearTimeout(touchTimer);
         });
 
         container.appendChild(dayElement);
@@ -1448,52 +684,6 @@ renderMonthView() {
         }, 100);
     }
 
-    showDayContextMenu(e, date) {
-        e.preventDefault();
-        const contextMenu = document.getElementById('contextMenu');
-        
-        contextMenu.innerHTML = '';
-        
-        const addItem = document.createElement('div');
-        addItem.className = 'context-item';
-        addItem.textContent = '➕ Добавить событие';
-        addItem.addEventListener('click', () => {
-            this.showAddEventModal();
-            document.getElementById('eventDate').value = this.formatDateForInput(date);
-            contextMenu.classList.remove('active');
-        });
-        
-        const showItem = document.createElement('div');
-        showItem.className = 'context-item';
-        showItem.textContent = '📅 Показать события';
-        showItem.addEventListener('click', () => {
-            this.selectDate(date);
-            this.updateEventsSidebar();
-            contextMenu.classList.remove('active');
-        });
-        
-        contextMenu.appendChild(addItem);
-        contextMenu.appendChild(showItem);
-        
-        const x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-        const y = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-        
-        contextMenu.style.left = x + 'px';
-        contextMenu.style.top = y + 'px';
-        contextMenu.classList.add('active');
-
-        const hideContextMenu = () => {
-            contextMenu.classList.remove('active');
-            document.removeEventListener('click', hideContextMenu);
-            document.removeEventListener('touchstart', hideContextMenu);
-        };
-
-        setTimeout(() => {
-            document.addEventListener('click', hideContextMenu);
-            document.addEventListener('touchstart', hideContextMenu);
-        }, 100);
-    }
-
     editEvent(event) {
         this.selectedEvent = event;
         document.getElementById('modalTitle').textContent = '✏️ Редактировать событие';
@@ -1567,7 +757,7 @@ renderMonthView() {
                 });
                 
                 return `
-                <div class="event-card" oncontextmenu="calendar.showEventContextMenu(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})" onclick="calendar.showEventContextMenu(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})" ontouchstart="calendar.showEventContextMenu(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})">
+                <div class="event-card" oncontextmenu="calendar.showEventContextMenu(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})" onclick="calendar.showEventContextMenu(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})">
                     <div class="event-title">${event.title}</div>
                     <div class="event-time">
                         ${event.startTime && event.endTime ? `${event.startTime} - ${event.endTime}` : 'Весь день'}
@@ -1661,6 +851,152 @@ renderMonthView() {
         document.getElementById('eventModal').classList.remove('active');
         document.getElementById('eventForm').reset();
         document.getElementById('deleteBtn').style.display = 'none';
+    }
+
+    // Mobile Events Modal Methods
+    setupMobileEventsModal() {
+        if (!this.isMobile) return;
+
+        // Backdrop click to close
+        document.getElementById('mobileEventsBackdrop').addEventListener('click', () => {
+            this.hideMobileEvents();
+        });
+
+        // Close button click
+        document.querySelector('.mobile-events-close').addEventListener('click', () => {
+            this.hideMobileEvents();
+        });
+
+        // Swipe down to close
+        this.setupMobileEventsSwipe();
+    }
+
+    setupMobileEventsSwipe() {
+        const modal = document.getElementById('mobileEventsModal');
+        const content = modal.querySelector('.mobile-events-content');
+        let startY = 0;
+        let currentY = 0;
+        let isSwiping = false;
+
+        content.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            isSwiping = true;
+        }, { passive: true });
+
+        content.addEventListener('touchmove', (e) => {
+            if (!isSwiping) return;
+            
+            currentY = e.touches[0].clientY;
+            const diff = currentY - startY;
+            
+            // Only allow swipe down
+            if (diff > 0) {
+                e.preventDefault();
+                const translateY = Math.min(diff, 100);
+                content.style.transform = `translateY(${translateY}px)`;
+                content.style.opacity = 1 - (diff / 300);
+            }
+        }, { passive: false });
+
+        content.addEventListener('touchend', () => {
+            if (!isSwiping) return;
+
+            const diff = currentY - startY;
+            const threshold = 100; // Minimum swipe distance to close
+            
+            if (diff > threshold) {
+                this.hideMobileEvents();
+            } else {
+                // Reset position
+                content.style.transform = 'translateY(0)';
+                content.style.opacity = '1';
+            }
+            
+            startY = 0;
+            currentY = 0;
+            isSwiping = false;
+        }, { passive: true });
+    }
+
+    showMobileEvents(date, events) {
+        if (!this.isMobile) return;
+
+        const modal = document.getElementById('mobileEventsModal');
+        const dateElement = document.getElementById('mobileEventsDate');
+        const eventsList = document.getElementById('mobileEventsList');
+
+        // Format date
+        const options = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        };
+        dateElement.textContent = date.toLocaleDateString('ru-RU', options);
+
+        // Populate events
+        if (events.length === 0) {
+            eventsList.innerHTML = `
+                <div class="mobile-events-empty">
+                    <div class="mobile-events-empty-icon">📅</div>
+                    <div class="mobile-events-empty-text">Нет событий на этот день</div>
+                    <button class="btn btn-primary" onclick="calendar.hideMobileEvents(); calendar.showAddEventModal();">
+                        ➕ Добавить событие
+                    </button>
+                </div>
+            `;
+        } else {
+            eventsList.innerHTML = events.map(event => `
+                <div class="mobile-event-card" 
+                     onclick="calendar.handleMobileEventClick(event, ${JSON.stringify(event).replace(/"/g, '&quot;')})">
+                    <div class="mobile-event-title">${event.title}</div>
+                    ${event.startTime && event.endTime ? 
+                        `<div class="mobile-event-time">🕒 ${event.startTime} - ${event.endTime}</div>` : 
+                        '<div class="mobile-event-time">🕒 Весь день</div>'
+                    }
+                    ${event.location ? `<div class="mobile-event-location">📍 ${event.location}</div>` : ''}
+                    ${event.description ? `<div class="mobile-event-description">${event.description}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Show modal
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    hideMobileEvents() {
+        const modal = document.getElementById('mobileEventsModal');
+        const content = modal.querySelector('.mobile-events-content');
+        
+        modal.classList.add('closing');
+        content.style.transform = 'translateY(100%)';
+        content.style.opacity = '0';
+        
+        setTimeout(() => {
+            modal.classList.remove('active', 'closing');
+            content.style.transform = '';
+            content.style.opacity = '';
+            document.body.style.overflow = ''; // Restore scrolling
+        }, 300);
+    }
+
+    handleMobileEventClick(domEvent, event) {
+        domEvent.stopPropagation();
+        this.hideMobileEvents();
+        setTimeout(() => {
+            this.showEventContextMenu(domEvent, event);
+        }, 300);
+    }
+
+    handleMobileDayTap(date) {
+        if (this.isMobile) {
+            const dayEvents = this.getEventsForDate(date);
+            this.selectedDate = date;
+            this.showMobileEvents(date, dayEvents);
+        } else {
+            this.selectDate(date);
+        }
     }
 }
 
@@ -1846,22 +1182,3 @@ let calendar;
 document.addEventListener('DOMContentLoaded', () => {
     calendar = new NeuronCalendar();
 });
-// Auto-inject mobile navigation when needed
-function setupMobileFeatures() {
-    if (window.innerWidth <= 768) {
-        // Add mobile-specific classes
-        document.body.classList.add('mobile-device');
-        
-        // Prevent zoom on input focus
-        document.addEventListener('touchstart', function() {}, {passive: true});
-        
-        // Improve touch scrolling
-        document.documentElement.style.setProperty('--vh', window.innerHeight * 0.01 + 'px');
-    }
-}
-
-// Update on resize
-window.addEventListener('resize', setupMobileFeatures);
-
-// Initial setup
-document.addEventListener('DOMContentLoaded', setupMobileFeatures);
